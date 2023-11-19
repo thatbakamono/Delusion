@@ -17,8 +17,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(Corrosion)
 
+add_subdirectory(Editor)
+add_subdirectory(Engine)
 add_subdirectory(thirdparty)
-
-add_executable(Delusion src/main.cpp)
-target_include_directories(Delusion PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_link_libraries(Delusion PRIVATE glfw glfw3webgpu webgpu wgpu-native)

@@ -10,3 +10,6 @@
 [submodule "thirdparty/webgpu-headers"]
 	path = thirdparty/webgpu-headers
 	url = https://github.com/DelusionEngine/webgpu-headers.git
+[submodule "thirdparty/imgui"]
+	path = thirdparty/imgui
+	url = https://github.com/DelusionEngine/imgui.git

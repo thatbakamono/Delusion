@@ -7,66 +7,12 @@
 #include <glfw/glfw3.h>
 #include <webgpu.h>
 #include <glfw3webgpu.h>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_wgpu.h>
 
-WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const *options) {
-    struct UserData {
-        WGPUAdapter adapter = nullptr;
-        bool requestEnded = false;
-    };
-    UserData userData;
-
-    static auto onAdapterRequestEnded = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, char const *message,
-                                           void *pUserData) {
-        UserData &userData = *reinterpret_cast<UserData *>(pUserData);
-        if (status == WGPURequestAdapterStatus_Success) {
-            userData.adapter = adapter;
-        } else {
-            std::cout << "Could not get WebGPU adapter: " << message << std::endl;
-        }
-        userData.requestEnded = true;
-    };
-
-    wgpuInstanceRequestAdapter(
-            instance,
-            options,
-            onAdapterRequestEnded,
-            &userData
-    );
-
-    assert(userData.requestEnded);
-
-    return userData.adapter;
-}
-
-WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const *descriptor) {
-    struct UserData {
-        WGPUDevice device = nullptr;
-        bool requestEnded = false;
-    };
-    UserData userData;
-
-    static auto onDeviceRequestEnded = [](WGPURequestDeviceStatus status, WGPUDevice device, char const *message,
-                                          void *pUserData) {
-        UserData &userData = *reinterpret_cast<UserData *>(pUserData);
-        if (status == WGPURequestDeviceStatus_Success) {
-            userData.device = device;
-        } else {
-            std::cout << "Could not get WebGPU device: " << message << std::endl;
-        }
-        userData.requestEnded = true;
-    };
-
-    wgpuAdapterRequestDevice(
-            adapter,
-            descriptor,
-            onDeviceRequestEnded,
-            &userData
-    );
-
-    assert(userData.requestEnded);
-
-    return userData.device;
-}
+import engine;
+import editor;
 
 int main() {
     glfwInit();
@@ -106,7 +52,7 @@ int main() {
     WGPUDevice device = requestDevice(adapter, &deviceDescriptor);
 
     auto onDeviceError = [](WGPUErrorType type, char const *message, void *) {
-        std::cout << "Uncaptured device error: type " << type;
+        std::cout << "Uncaptured m_device error: type " << type;
         if (message) std::cout << " (" << message << ")";
         std::cout << std::endl;
     };
@@ -178,11 +124,11 @@ int main() {
     wgpuQueueWriteBuffer(queue, vertexBuffer, 0, vertices.data(), vertices.size() * sizeof(float));
 
     WGPUVertexAttribute attributes[] = {
-        WGPUVertexAttribute {
-            .format = WGPUVertexFormat_Float32x2,
-            .offset = 0,
-            .shaderLocation = 0,
-        }
+            WGPUVertexAttribute {
+                    .format = WGPUVertexFormat_Float32x2,
+                    .offset = 0,
+                    .shaderLocation = 0,
+            }
     };
     WGPUVertexBufferLayout vertexBufferLayout = {
             .arrayStride = 2 * sizeof(float),
@@ -224,8 +170,24 @@ int main() {
     };
     WGPURenderPipeline renderPipeline = wgpuDeviceCreateRenderPipeline(device, &renderPipelineDescriptor);
 
+    WGPUTextureFormat preferredFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
+
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOther(window.get(), true);
+    ImGui_ImplWGPU_Init(device, 3, preferredFormat, WGPUTextureFormat_Undefined);
+
+    Editor editor;
+
     while (!glfwWindowShouldClose(window.get())) {
         glfwPollEvents();
+
+        ImGui_ImplWGPU_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        editor.update();
+
+        ImGui::Render();
 
         WGPUSurfaceTexture surfaceTexture;
         wgpuSurfaceGetCurrentTexture(surface, &surfaceTexture);
@@ -255,9 +217,11 @@ int main() {
         WGPURenderPassEncoder renderPassEncoder = wgpuCommandEncoderBeginRenderPass(commandEncoder,
                                                                                     &renderPassDescriptor);
 
-        wgpuRenderPassEncoderSetPipeline(renderPassEncoder, renderPipeline);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPassEncoder, 0, vertexBuffer, 0, vertices.size() * sizeof(float));
-        wgpuRenderPassEncoderDraw(renderPassEncoder, 3, 1, 0, 0);
+        ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), renderPassEncoder);
+
+        //wgpuRenderPassEncoderSetPipeline(renderPassEncoder, renderPipeline);
+        //wgpuRenderPassEncoderSetVertexBuffer(renderPassEncoder, 0, vertexBuffer, 0, vertices.size() * sizeof(float));
+        //wgpuRenderPassEncoderDraw(renderPassEncoder, 3, 1, 0, 0);
         wgpuRenderPassEncoderEnd(renderPassEncoder);
 
         WGPUCommandBufferDescriptor commandBufferDescriptor = {

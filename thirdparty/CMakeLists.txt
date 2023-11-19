@@ -1,5 +1,6 @@
 add_subdirectory(glfw)
 add_subdirectory(glfw3webgpu)
+add_subdirectory(imgui)
 add_subdirectory(webgpu-headers)
 
 corrosion_import_crate(MANIFEST_PATH wgpu-native/Cargo.toml)

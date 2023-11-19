@@ -1,0 +1,12 @@
+[submodule "thirdparty/glfw"]
+	path = thirdparty/glfw
+	url = https://github.com/DelusionEngine/glfw
+[submodule "thirdparty/glfw3webgpu"]
+	path = thirdparty/glfw3webgpu
+	url = https://github.com/DelusionEngine/glfw3webgpu
+[submodule "thirdparty/wgpu-native"]
+	path = thirdparty/wgpu-native
+	url = https://github.com/DelusionEngine/wgpu-native
+[submodule "thirdparty/webgpu-headers"]
+	path = thirdparty/webgpu-headers
+	url = https://github.com/DelusionEngine/webgpu-headers.git

@@ -177,6 +177,21 @@ int main() {
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+    WGPUTextureDescriptor textureDescriptor = {
+            .nextInChain = nullptr,
+            .label = "Texture",
+            .usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
+            .dimension = WGPUTextureDimension_2D,
+            .size = WGPUExtent3D { 1280, 720, 1 },
+            .format = preferredFormat,
+            .mipLevelCount = 1,
+            .sampleCount = 1,
+            .viewFormatCount = 0,
+            .viewFormats = nullptr,
+    };
+    WGPUTexture viewportTexture = wgpuDeviceCreateTexture(device, &textureDescriptor);
+    WGPUTextureView viewportTextureView = wgpuTextureCreateView(viewportTexture, nullptr);
+
     ImGui_ImplGlfw_InitForOther(window.get(), true);
     ImGui_ImplWGPU_Init(device, 3, preferredFormat, WGPUTextureFormat_Undefined);
 
@@ -185,26 +200,54 @@ int main() {
     while (!glfwWindowShouldClose(window.get())) {
         glfwPollEvents();
 
-        ImGui_ImplWGPU_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-
-        editor.update();
-
-        ImGui::Render();
-
-        WGPUSurfaceTexture surfaceTexture;
-        wgpuSurfaceGetCurrentTexture(surface, &surfaceTexture);
-
-        auto textureView = wgpuTextureCreateView(surfaceTexture.texture, nullptr);
-
         WGPUCommandEncoderDescriptor encoderDescriptor = {
                 .nextInChain = nullptr,
                 .label = "Command encoder",
         };
         WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(device, &encoderDescriptor);
+
+        {
+            WGPURenderPassColorAttachment renderPassColorAttachment = {
+                    .view = viewportTextureView,
+                    .resolveTarget = nullptr,
+                    .loadOp = WGPULoadOp_Clear,
+                    .storeOp = WGPUStoreOp_Store,
+                    .clearValue = WGPUColor{0.0, 0.0, 0.0, 1.0},
+            };
+            WGPURenderPassDescriptor renderPassDescriptor = {
+                    .nextInChain = nullptr,
+                    .colorAttachmentCount = 1,
+                    .colorAttachments = &renderPassColorAttachment,
+                    .depthStencilAttachment = nullptr,
+                    .timestampWrites = nullptr,
+            };
+            WGPURenderPassEncoder renderPassEncoder = wgpuCommandEncoderBeginRenderPass(commandEncoder,
+                                                                                        &renderPassDescriptor);
+
+            wgpuRenderPassEncoderSetPipeline(renderPassEncoder, renderPipeline);
+
+            wgpuRenderPassEncoderSetVertexBuffer(renderPassEncoder, 0, vertexBuffer, 0, vertices.size() * sizeof(float));
+            wgpuRenderPassEncoderDraw(renderPassEncoder, 3, 1, 0, 0);
+
+            wgpuRenderPassEncoderEnd(renderPassEncoder);
+        }
+
+        {
+            ImGui_ImplWGPU_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
+            ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
+            editor.update(viewportTextureView);
+
+            ImGui::Render();
+        }
+
+        WGPUSurfaceTexture surfaceTexture;
+        wgpuSurfaceGetCurrentTexture(surface, &surfaceTexture);
+
+        auto textureView = wgpuTextureCreateView(surfaceTexture.texture, nullptr);
 
         WGPURenderPassColorAttachment renderPassColorAttachment = {
                 .view = textureView,
@@ -225,9 +268,6 @@ int main() {
 
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), renderPassEncoder);
 
-        //wgpuRenderPassEncoderSetPipeline(renderPassEncoder, renderPipeline);
-        //wgpuRenderPassEncoderSetVertexBuffer(renderPassEncoder, 0, vertexBuffer, 0, vertices.size() * sizeof(float));
-        //wgpuRenderPassEncoderDraw(renderPassEncoder, 3, 1, 0, 0);
         wgpuRenderPassEncoderEnd(renderPassEncoder);
 
         WGPUCommandBufferDescriptor commandBufferDescriptor = {
@@ -246,6 +286,8 @@ int main() {
         wgpuTextureRelease(surfaceTexture.texture);
     }
 
+    wgpuTextureViewRelease(viewportTextureView);
+    wgpuTextureRelease(viewportTexture);
     wgpuBufferRelease(vertexBuffer);
     wgpuQueueRelease(queue);
     wgpuDeviceRelease(device);

@@ -173,6 +173,10 @@ int main() {
     WGPUTextureFormat preferredFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
 
     ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
     ImGui_ImplGlfw_InitForOther(window.get(), true);
     ImGui_ImplWGPU_Init(device, 3, preferredFormat, WGPUTextureFormat_Undefined);
 
@@ -184,6 +188,8 @@ int main() {
         ImGui_ImplWGPU_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
         editor.update();
 

@@ -247,6 +247,10 @@ int main() {
         WGPUSurfaceTexture surfaceTexture;
         wgpuSurfaceGetCurrentTexture(surface, &surfaceTexture);
 
+        if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
+            continue;
+        }
+
         auto textureView = wgpuTextureCreateView(surfaceTexture.texture, nullptr);
 
         WGPURenderPassColorAttachment renderPassColorAttachment = {

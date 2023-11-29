@@ -19,4 +19,5 @@ FetchContent_MakeAvailable(Corrosion)
 
 add_subdirectory(Editor)
 add_subdirectory(Engine)
+add_subdirectory(firstparty)
 add_subdirectory(thirdparty)

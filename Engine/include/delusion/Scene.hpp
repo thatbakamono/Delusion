@@ -1,19 +1,15 @@
-module;
+#pragma once
 
-#include <vector>
+#include <delusion/Entity.hpp>
 
-#include <entt/entt.hpp>
-
-export module scene;
-
-import entity;
-
-export class Scene {
+class Scene {
 private:
     entt::registry m_registry;
 
     std::vector<Entity> m_entities;
 public:
+    Scene() = default;
+
     Scene(const Scene& other) = delete;
     Scene(Scene&& other) noexcept = delete;
 
@@ -30,6 +26,10 @@ public:
 
     void remove(const Entity& entity) {
         m_entities.erase(std::find(m_entities.begin(), m_entities.end(), entity));
+    }
+
+    [[nodiscard]] std::vector<Entity>& entities() {
+        return m_entities;
     }
 
     [[nodiscard]] const std::vector<Entity>& entities() const {

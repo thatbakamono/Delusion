@@ -1,6 +1,7 @@
 add_subdirectory(entt)
 add_subdirectory(glfw)
 add_subdirectory(glfw3webgpu)
+add_subdirectory(glm)
 add_subdirectory(imgui)
 add_subdirectory(webgpu-headers)
 

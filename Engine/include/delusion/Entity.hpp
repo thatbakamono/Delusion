@@ -1,13 +1,10 @@
-module;
+#pragma once
 
 #include <span>
-#include <vector>
 
 #include <entt/entt.hpp>
 
-export module entity;
-
-export class Entity {
+class Entity {
 private:
     entt::registry& m_registry;
     entt::entity m_entityId;
@@ -76,7 +73,7 @@ public:
             throw std::runtime_error("Entity already has component");
         }
 
-        return m_registry.emplace<T>(m_entityId, std::forward<Parameters>(parameters)...);
+        m_registry.emplace<T>(m_entityId, std::forward<Parameters>(parameters)...);
     }
 
     template<typename T>

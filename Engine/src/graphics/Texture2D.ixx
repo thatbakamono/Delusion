@@ -1,6 +1,7 @@
 module;
 
 #include <vector>
+#include <memory>
 
 #include <webgpu.h>
 
@@ -28,7 +29,7 @@ public:
     Texture2D& operator =(const Texture2D& other) = delete;
     Texture2D& operator =(Texture2D&& other) noexcept = delete;
 
-    [[nodiscard]] static Texture2D create(WGPUDevice device, WGPUQueue queue, Image& image) {
+    [[nodiscard]] static std::unique_ptr<Texture2D> create(WGPUDevice device, WGPUQueue queue, Image& image) {
         WGPUTextureDescriptor textureDescriptor = {
                 .nextInChain = nullptr,
                 .label = "Texture2D",
@@ -72,7 +73,7 @@ public:
 
         wgpuQueueWriteTexture(queue, &destination, image.pixels().data(), image.pixels().size(), &source, &textureDescriptor.size);
 
-        return { texture, textureView };
+        return std::unique_ptr<Texture2D>(new Texture2D(texture, textureView));
     }
 
     [[nodiscard]] WGPUTextureView view() {

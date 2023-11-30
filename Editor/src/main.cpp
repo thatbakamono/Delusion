@@ -4,6 +4,7 @@
 #include <fstream>
 #include <memory>
 
+#include <glm/vec2.hpp>
 #include <glfw/glfw3.h>
 #include <webgpu.h>
 #include <glfw3webgpu.h>
@@ -11,8 +12,14 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_wgpu.h>
 
-import engine;
+#include <delusion/Scene.hpp>
+
+import components;
 import editor;
+import engine;
+import texture2d;
+import image_decoder;
+import renderer;
 
 int main() {
     glfwInit();
@@ -87,94 +94,15 @@ int main() {
 
     wgpuSurfaceConfigure(surface, &surfaceConfiguration);
 
-    WGPUPipelineLayoutDescriptor pipelineLayoutDescriptor = {
-            .label = "Pipeline layout",
-    };
-    WGPUPipelineLayout pipelineLayout = wgpuDeviceCreatePipelineLayout(device, &pipelineLayoutDescriptor);
+    auto image = ImageDecoder::decode("bottom_face.png");
 
-    std::ifstream stream("src/shader.wgsl", std::ios_base::binary);
-    std::string shaderSource = {std::istreambuf_iterator(stream), std::istreambuf_iterator<char>()};
-
-    WGPUShaderModuleWGSLDescriptor shaderModuleWgslDescriptor = {
-            .chain = WGPUChainedStruct{
-                    .sType = WGPUSType_ShaderModuleWGSLDescriptor,
-            },
-            .code = shaderSource.c_str(),
-    };
-    WGPUShaderModuleDescriptor shaderModuleDescriptor = {
-            .nextInChain = reinterpret_cast<WGPUChainedStruct *>(&shaderModuleWgslDescriptor),
-            .label = "Shader module",
-    };
-    WGPUShaderModule shaderModule = wgpuDeviceCreateShaderModule(device, &shaderModuleDescriptor);
-
-    std::array<float, 6> vertices {
-            -0.5f, -0.5f,
-            0.5f, -0.5f,
-            0.0f,  0.5f,
-    };
-
-    WGPUBufferDescriptor vertexBufferDescriptor = {
-            .nextInChain = nullptr,
-            .label = "Vertex buffer",
-            .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
-            .size = vertices.size() * sizeof(float),
-            .mappedAtCreation = false,
-    };
-    WGPUBuffer vertexBuffer = wgpuDeviceCreateBuffer(device, &vertexBufferDescriptor);
-    wgpuQueueWriteBuffer(queue, vertexBuffer, 0, vertices.data(), vertices.size() * sizeof(float));
-
-    WGPUVertexAttribute attributes[] = {
-            WGPUVertexAttribute {
-                    .format = WGPUVertexFormat_Float32x2,
-                    .offset = 0,
-                    .shaderLocation = 0,
-            }
-    };
-    WGPUVertexBufferLayout vertexBufferLayout = {
-            .arrayStride = 2 * sizeof(float),
-            .stepMode = WGPUVertexStepMode_Vertex,
-            .attributeCount = 1,
-            .attributes = attributes,
-    };
-
-    WGPUColorTargetState targets[] = {
-            WGPUColorTargetState{
-                    .format = surfaceCapabilities.formats[0],
-                    .writeMask = WGPUColorWriteMask_All,
-            },
-    };
-    WGPUVertexState vertexState = {
-            .module = shaderModule,
-            .entryPoint = "vs_main",
-            .bufferCount = 1,
-            .buffers = &vertexBufferLayout,
-    };
-    WGPUFragmentState fragmentState = {
-            .module = shaderModule,
-            .entryPoint = "fs_main",
-            .targetCount = 1,
-            .targets = targets,
-    };
-    WGPURenderPipelineDescriptor renderPipelineDescriptor = {
-            .label = "Render pipeline",
-            .layout = pipelineLayout,
-            .vertex = vertexState,
-            .primitive = WGPUPrimitiveState{
-                    .topology = WGPUPrimitiveTopology_TriangleList,
-            },
-            .multisample = WGPUMultisampleState{
-                    .count = 1,
-                    .mask = 0xFFFFFFFF,
-            },
-            .fragment = &fragmentState,
-    };
-    WGPURenderPipeline renderPipeline = wgpuDeviceCreateRenderPipeline(device, &renderPipelineDescriptor);
+    std::shared_ptr<Texture2D> texture = Texture2D::create(device, queue, image);
 
     WGPUTextureFormat preferredFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
 
     ImGui::CreateContext();
 
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     WGPUTextureDescriptor textureDescriptor = {
@@ -182,7 +110,7 @@ int main() {
             .label = "Texture",
             .usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
             .dimension = WGPUTextureDimension_2D,
-            .size = WGPUExtent3D { 1280, 720, 1 },
+            .size = WGPUExtent3D{1280, 720, 1},
             .format = preferredFormat,
             .mipLevelCount = 1,
             .sampleCount = 1,
@@ -195,7 +123,11 @@ int main() {
     ImGui_ImplGlfw_InitForOther(window.get(), true);
     ImGui_ImplWGPU_Init(device, 3, preferredFormat, WGPUTextureFormat_Undefined);
 
+    Renderer renderer = Renderer::create(device, queue, surfaceCapabilities);
+
     Editor editor;
+
+    Scene scene;
 
     while (!glfwWindowShouldClose(window.get())) {
         glfwPollEvents();
@@ -207,29 +139,7 @@ int main() {
         WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(device, &encoderDescriptor);
 
         {
-            WGPURenderPassColorAttachment renderPassColorAttachment = {
-                    .view = viewportTextureView,
-                    .resolveTarget = nullptr,
-                    .loadOp = WGPULoadOp_Clear,
-                    .storeOp = WGPUStoreOp_Store,
-                    .clearValue = WGPUColor{0.0, 0.0, 0.0, 1.0},
-            };
-            WGPURenderPassDescriptor renderPassDescriptor = {
-                    .nextInChain = nullptr,
-                    .colorAttachmentCount = 1,
-                    .colorAttachments = &renderPassColorAttachment,
-                    .depthStencilAttachment = nullptr,
-                    .timestampWrites = nullptr,
-            };
-            WGPURenderPassEncoder renderPassEncoder = wgpuCommandEncoderBeginRenderPass(commandEncoder,
-                                                                                        &renderPassDescriptor);
-
-            wgpuRenderPassEncoderSetPipeline(renderPassEncoder, renderPipeline);
-
-            wgpuRenderPassEncoderSetVertexBuffer(renderPassEncoder, 0, vertexBuffer, 0, vertices.size() * sizeof(float));
-            wgpuRenderPassEncoderDraw(renderPassEncoder, 3, 1, 0, 0);
-
-            wgpuRenderPassEncoderEnd(renderPassEncoder);
+            renderer.renderScene(commandEncoder, viewportTextureView, scene);
         }
 
         {
@@ -292,7 +202,6 @@ int main() {
 
     wgpuTextureViewRelease(viewportTextureView);
     wgpuTextureRelease(viewportTexture);
-    wgpuBufferRelease(vertexBuffer);
     wgpuQueueRelease(queue);
     wgpuDeviceRelease(device);
     wgpuAdapterRelease(adapter);

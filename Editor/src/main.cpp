@@ -94,10 +94,6 @@ int main() {
 
     wgpuSurfaceConfigure(surface, &surfaceConfiguration);
 
-    auto image = ImageDecoder::decode("bottom_face.png");
-
-    std::shared_ptr<Texture2D> texture = Texture2D::create(device, queue, image);
-
     WGPUTextureFormat preferredFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
 
     ImGui::CreateContext();

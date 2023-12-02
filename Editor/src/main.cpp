@@ -149,7 +149,7 @@ int main() {
 
             ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-            editor.update(viewportTextureView);
+            editor.update(viewportTextureView, scene);
 
             ImGui::Render();
         }

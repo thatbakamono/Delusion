@@ -143,6 +143,9 @@ public:
             auto &transform = entity.getComponent<Transform>();
             auto &sprite = entity.getComponent<Sprite>();
 
+            if (sprite.texture == nullptr)
+                continue;
+
             WGPUBufferDescriptor uniformBufferDescriptor = {
                     .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform,
                     .size = sizeof(glm::mat4),

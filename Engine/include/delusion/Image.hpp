@@ -1,11 +1,9 @@
-module;
+#pragma once
 
 #include <span>
 #include <vector>
 
-export module image;
-
-export class Image {
+class Image {
 private:
     uint32_t m_width;
     uint32_t m_height;

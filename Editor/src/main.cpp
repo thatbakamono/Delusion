@@ -1,10 +1,8 @@
-#include <array>
 #include <cassert>
 #include <iostream>
 #include <fstream>
 #include <memory>
 
-#include <glm/vec2.hpp>
 #include <glfw/glfw3.h>
 #include <webgpu.h>
 #include <glfw3webgpu.h>
@@ -12,14 +10,11 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_wgpu.h>
 
+#include <delusion/Engine.hpp>
 #include <delusion/Scene.hpp>
+#include <delusion/graphics/Renderer.hpp>
 
-import components;
-import editor;
-import engine;
-import texture2d;
-import image_decoder;
-import renderer;
+#include "Editor.hpp"
 
 int main() {
     glfwInit();

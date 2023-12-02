@@ -1,13 +1,6 @@
-module;
+#include "delusion/Engine.hpp"
 
-#include <cassert>
-#include <iostream>
-
-#include <webgpu.h>
-
-export module engine;
-
-export WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const *options) {
+WGPUAdapter requestAdapter(WGPUInstance instance, const WGPURequestAdapterOptions *options) {
     struct UserData {
         WGPUAdapter adapter = nullptr;
         bool requestEnded = false;
@@ -37,7 +30,7 @@ export WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptio
     return userData.adapter;
 }
 
-export WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const *descriptor) {
+WGPUDevice requestDevice(WGPUAdapter adapter, const WGPUDeviceDescriptor *descriptor) {
     struct UserData {
         WGPUDevice device = nullptr;
         bool requestEnded = false;

@@ -1,10 +1,7 @@
-add_library(Engine)
-target_sources(
+add_library(
         Engine
-        PUBLIC
-        FILE_SET CXX_MODULES FILES
-        src/Components.ixx src/Engine.ixx src/Image.ixx src/formats/ImageDecoder.ixx src/graphics/Renderer.ixx
-        src/graphics/Shader.ixx src/graphics/Texture2D.ixx
+        src/Engine.cpp src/formats/ImageDecoder.cpp src/graphics/Renderer.cpp src/graphics/Shader.cpp
+        src/graphics/Texture2D.cpp
 )
 target_include_directories(Engine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(Engine PUBLIC cimage EnTT glfw glfw3webgpu glm webgpu wgpu-native)

@@ -19,13 +19,17 @@ public:
     Entity& create() {
         auto entityId = m_registry.create();
 
-        m_entities.emplace_back(m_registry, entityId);
+        m_entities.emplace_back(&m_registry, entityId);
 
         return m_entities.back();
     }
 
-    void remove(const Entity& entity) {
-        m_entities.erase(std::find(m_entities.begin(), m_entities.end(), entity));
+    void remove(Entity& entity) {
+        auto result = std::find(m_entities.begin(), m_entities.end(), entity);
+
+        if (result != m_entities.end()) {
+            m_entities.erase(result);
+        }
     }
 
     [[nodiscard]] std::vector<Entity>& entities() {

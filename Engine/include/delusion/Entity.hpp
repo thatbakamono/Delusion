@@ -6,12 +6,12 @@
 
 class Entity {
 private:
-    entt::registry& m_registry;
+    entt::registry* m_registry;
     entt::entity m_entityId;
 
     std::vector<Entity> m_children;
 public:
-    Entity(entt::registry& registry, const entt::entity entityId) : m_registry(registry), m_entityId(entityId) {}
+    Entity(entt::registry* registry, const entt::entity entityId) : m_registry(registry), m_entityId(entityId) {}
 
     // TODO: Implement
     Entity(const Entity& other) = delete;
@@ -23,7 +23,7 @@ public:
 
     ~Entity() {
         if (m_entityId != entt::null) {
-            m_registry.destroy(m_entityId);
+            m_registry->destroy(m_entityId);
         }
     }
 
@@ -32,10 +32,10 @@ public:
 
     Entity& operator =(Entity&& other) noexcept {
         if (m_entityId != entt::null) {
-            m_registry.destroy(m_entityId);
+            m_registry->destroy(m_entityId);
         }
 
-        m_registry = std::move(other.m_registry);
+        m_registry = other.m_registry;
         m_entityId = std::exchange(other.m_entityId, entt::null);
         m_children = std::move(other.m_children);
 
@@ -47,7 +47,7 @@ public:
     }
 
     Entity& createChild() {
-        auto entityId = m_registry.create();
+        auto entityId = m_registry->create();
 
         m_children.emplace_back(m_registry, entityId);
 
@@ -55,7 +55,11 @@ public:
     }
 
     void removeChild(Entity& entity) {
-        m_children.erase(std::find(m_children.begin(), m_children.end(), entity));
+        auto result = std::find(m_children.begin(), m_children.end(), entity);
+
+        if (result != m_children.end()) {
+            m_children.erase(result);
+        }
     }
 
     [[nodiscard]] std::span<Entity> children() {
@@ -64,7 +68,7 @@ public:
 
     template<typename T>
     [[nodiscard]] bool hasComponent() const {
-        return m_registry.all_of<T>(m_entityId);
+        return m_registry->all_of<T>(m_entityId);
     }
 
     template<typename T, typename... Parameters>
@@ -73,7 +77,7 @@ public:
             throw std::runtime_error("Entity already has component");
         }
 
-        m_registry.emplace<T>(m_entityId, std::forward<Parameters>(parameters)...);
+        m_registry->emplace<T>(m_entityId, std::forward<Parameters>(parameters)...);
     }
 
     template<typename T>
@@ -82,7 +86,7 @@ public:
             throw std::runtime_error("Entity doesn't have component");
         }
 
-        m_registry.remove<T>(m_entityId);
+        m_registry->remove<T>(m_entityId);
     }
 
     template<typename T>
@@ -91,7 +95,7 @@ public:
             throw std::runtime_error("Entity doesn't have component");
         }
 
-        return m_registry.get<T>(m_entityId);
+        return m_registry->get<T>(m_entityId);
     }
 
     template<typename T>
@@ -100,6 +104,6 @@ public:
             throw std::runtime_error("Entity doesn't have component");
         }
 
-        return m_registry.get<T>(m_entityId);
+        return m_registry->get<T>(m_entityId);
     }
 };

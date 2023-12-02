@@ -3,6 +3,7 @@ module;
 #include <optional>
 #include <string>
 
+#include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 
 #include <webgpu.h>
@@ -11,7 +12,11 @@ module;
 
 export module editor;
 
+import components;
+
 export class Editor {
+private:
+    Entity* selectedEntity = nullptr;
 public:
     void update(WGPUTextureView viewportTextureView, Scene& scene) {
         {
@@ -40,7 +45,15 @@ public:
             }
 
             if (entityToDestroyIndex.has_value()) {
+                if (selectedEntity == &entities[entityToDestroyIndex.value()]) {
+                    selectedEntity = nullptr;
+                }
+
                 scene.remove(entities[entityToDestroyIndex.value()]);
+            }
+
+            if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(0)) {
+                selectedEntity = nullptr;
             }
 
             ImGui::End();
@@ -56,9 +69,76 @@ public:
             ImGui::End();
         }
 
-        ImGui::Begin("Properties");
+        {
+            ImGui::Begin("Properties");
 
-        ImGui::End();
+            if (selectedEntity != nullptr) {
+                auto hasTransform = selectedEntity->hasComponent<Transform>();
+                auto hasSprite = selectedEntity->hasComponent<Sprite>();
+
+                if (hasTransform) {
+                    auto& transform = selectedEntity->getComponent<Transform>();
+
+                    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                        if (ImGui::BeginPopupContextItem(nullptr)) {
+                            if (ImGui::MenuItem("Remove component")) {
+                                selectedEntity->removeComponent<Transform>();
+                            }
+
+                            ImGui::EndPopup();
+                        }
+
+                        ImGui::DragFloat2("Position", glm::value_ptr(transform.position), 0.1f, 0.0f, 0.0f, "%.5f");
+                        ImGui::DragFloat("Rotation", &transform.rotation, 0.1f, 0.0f, 0.0f, "%.5f");
+                        ImGui::DragFloat2("Scale", glm::value_ptr(transform.scale), 0.1f, 0.0f, 0.0f, "%.5f");
+                    }
+                }
+
+                if (hasSprite) {
+                    auto& sprite = selectedEntity->getComponent<Sprite>();
+
+                    if (ImGui::CollapsingHeader("Sprite", ImGuiTreeNodeFlags_DefaultOpen)) {
+                        if (ImGui::BeginPopupContextItem(nullptr)) {
+                            if (ImGui::MenuItem("Remove component")) {
+                                selectedEntity->removeComponent<Sprite>();
+                            }
+
+                            ImGui::EndPopup();
+                        }
+
+                        if (sprite.texture != nullptr) {
+                            ImGui::Image(sprite.texture->view(), ImVec2(128.0f, 128.0f), ImVec2(0, 1), ImVec2(1, 0));
+                        }
+                    }
+                }
+
+                if (ImGui::Button("Add component")) {
+                    ImGui::OpenPopup("add_component_popup");
+                }
+
+                if (ImGui::BeginPopup("add_component_popup")) {
+                    if (!hasTransform) {
+                        if (ImGui::Button("Transform")) {
+                            selectedEntity->addComponent<Transform>();
+
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+
+                    if (!hasSprite) {
+                        if (ImGui::Button("Sprite")) {
+                            selectedEntity->addComponent<Sprite>();
+
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+
+                    ImGui::EndPopup();
+                }
+            }
+
+            ImGui::End();
+        }
     }
 private:
     bool entityHierarchy(Entity& entity) {
@@ -66,6 +146,10 @@ private:
 
         auto isOpen = ImGui::TreeNode(id.c_str(), "Entity");
         auto destroy = false;
+
+        if (ImGui::IsItemClicked()) {
+            selectedEntity = &entity;
+        }
 
         if (ImGui::BeginPopupContextItem()) {
             if (ImGui::MenuItem("Create entity")) {
@@ -95,6 +179,10 @@ private:
             }
 
             if (entityToDestroyIndex.has_value()) {
+                if (selectedEntity == &children[entityToDestroyIndex.value()]) {
+                    selectedEntity = nullptr;
+                }
+
                 entity.removeChild(children[entityToDestroyIndex.value()]);
             }
 

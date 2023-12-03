@@ -60,6 +60,52 @@ void Editor::update(WGPUTextureView viewportTextureView, Scene &scene) {
     }
 
     {
+        ImGui::Begin("Asset browser");
+
+        if (currentDirectory != assetsDirectory) {
+            if (ImGui::Button("<-")) {
+                currentDirectory = currentDirectory.parent_path();
+            }
+        }
+
+        auto availableSize = ImGui::GetContentRegionAvail();
+
+        constexpr float padding = 8.0f;
+        constexpr float thumbnailSize = 64.0f;
+
+        auto totalSize = thumbnailSize + padding;
+        auto columnCount = static_cast<int>(availableSize.x / totalSize);
+
+        if (columnCount < 1)
+            columnCount = 1;
+
+        ImGui::Columns(columnCount, nullptr, false);
+
+        for (const auto& entry : std::filesystem::directory_iterator(currentDirectory)) {
+            const auto& path = entry.path();
+            const auto name = path.filename().string();
+
+            auto iconTexture = entry.is_directory() ? directoryIconTexture : fileIconTexture;
+
+            ImGui::ImageButton(iconTexture->view(), { thumbnailSize, thumbnailSize }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                if (entry.is_directory()) {
+                    currentDirectory /= path.filename();
+                }
+            }
+
+            ImGui::TextWrapped("%s", name.c_str());
+
+            ImGui::NextColumn();
+        }
+
+        ImGui::Columns(1);
+
+        ImGui::End();
+    }
+
+    {
         ImGui::Begin("Properties");
 
         if (selectedEntity != nullptr) {

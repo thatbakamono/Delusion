@@ -12,6 +12,7 @@
 
 #include <delusion/Engine.hpp>
 #include <delusion/Scene.hpp>
+#include <delusion/formats/ImageDecoder.hpp>
 #include <delusion/graphics/Renderer.hpp>
 
 #include "Editor.hpp"
@@ -116,7 +117,12 @@ int main() {
 
     Renderer renderer = Renderer::create(device, queue, surfaceCapabilities);
 
-    Editor editor;
+    auto fileIconImage = ImageDecoder::decode("file.png");
+    auto directoryIconImage = ImageDecoder::decode("directory.png");
+    std::shared_ptr<Texture2D> fileIconTexture = Texture2D::create(device, queue, fileIconImage);
+    std::shared_ptr<Texture2D> directoryIconTexture = Texture2D::create(device, queue, directoryIconImage);
+
+    Editor editor(fileIconTexture, directoryIconTexture);
 
     Scene scene;
 

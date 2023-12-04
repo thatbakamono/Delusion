@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 #include <nfd.hpp>
+#include <delusion/formats/ImageDecoder.hpp>
 
 #include "delusion/Components.hpp"
 
@@ -133,7 +134,21 @@ void Editor::update(WGPUTextureView viewportTextureView, Scene &scene) {
 
                 auto iconTexture = entry.is_directory() ? directoryIconTexture : fileIconTexture;
 
+                auto extension = path.filename().extension();
+                auto extensionText = extension.string();
+
                 ImGui::ImageButton(iconTexture->view(), { thumbnailSize, thumbnailSize }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+
+                // TODO: Ask some kind of FormatRegistry whether it's a supported image format
+                if (extensionText == ".png") {
+                    if (ImGui::BeginDragDropSource()) {
+                        auto pathText = path.string();
+
+                        ImGui::SetDragDropPayload("image", pathText.c_str(), pathText.size() + 1, ImGuiCond_Once);
+
+                        ImGui::EndDragDropSource();
+                    }
+                }
 
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                     if (entry.is_directory()) {
@@ -190,6 +205,21 @@ void Editor::update(WGPUTextureView viewportTextureView, Scene &scene) {
 
                         if (sprite.texture != nullptr) {
                             ImGui::Image(sprite.texture->view(), ImVec2(128.0f, 128.0f), ImVec2(0, 1), ImVec2(1, 0));
+                        } else {
+                            ImGui::Image(emptyTexture->view(), ImVec2(128.0f, 128.0f), ImVec2(0, 1), ImVec2(1, 0));
+                        }
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            auto payload = ImGui::AcceptDragDropPayload("image");
+
+                            if (payload != nullptr) {
+                                auto image = ImageDecoder::decode(static_cast<char*>(payload->Data));
+                                std::shared_ptr<Texture2D> texture = Texture2D::create(device, queue, image);
+
+                                sprite.texture = texture;
+                            }
+
+                            ImGui::EndDragDropTarget();
                         }
                     }
                 }

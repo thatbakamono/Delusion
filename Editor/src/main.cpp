@@ -125,7 +125,10 @@ int main() {
     std::shared_ptr<Texture2D> fileIconTexture = Texture2D::create(device, queue, fileIconImage);
     std::shared_ptr<Texture2D> directoryIconTexture = Texture2D::create(device, queue, directoryIconImage);
 
-    Editor editor(fileIconTexture, directoryIconTexture);
+    Image emptyImage(1, 1, { 0, 0, 0, 0 });
+    std::shared_ptr<Texture2D> emptyTexture = Texture2D::create(device, queue, emptyImage);
+
+    Editor editor(device, queue, emptyTexture, fileIconTexture, directoryIconTexture);
 
     Scene scene;
 

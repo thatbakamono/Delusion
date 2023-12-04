@@ -11,10 +11,12 @@ public:
     Scene() = default;
 
     Scene(const Scene& other) = delete;
-    Scene(Scene&& other) noexcept = delete;
+
+    Scene(Scene&& other) noexcept;
 
     Scene& operator =(const Scene& other) = delete;
-    Scene& operator =(Scene&& other) noexcept = delete;
+
+    Scene& operator =(Scene&& other) noexcept;
 
     Entity& create() {
         auto entityId = m_registry.create();
@@ -39,4 +41,6 @@ public:
     [[nodiscard]] const std::vector<Entity>& entities() const {
         return m_entities;
     }
+private:
+    void updateRegistry(Entity& entity, entt::registry* registry);
 };

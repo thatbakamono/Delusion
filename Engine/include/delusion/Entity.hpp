@@ -4,6 +4,8 @@
 
 #include <entt/entt.hpp>
 
+class Scene;
+
 class Entity {
 private:
     entt::registry* m_registry;
@@ -16,7 +18,8 @@ public:
     // TODO: Implement
     Entity(const Entity& other) = delete;
 
-    Entity(Entity&& other) noexcept : m_registry(other.m_registry) {
+    Entity(Entity&& other) noexcept {
+        m_registry = std::exchange(other.m_registry, nullptr);
         m_entityId = std::exchange(other.m_entityId, entt::null);
         m_children = std::move(other.m_children);
     }
@@ -35,7 +38,7 @@ public:
             m_registry->destroy(m_entityId);
         }
 
-        m_registry = other.m_registry;
+        m_registry = std::exchange(other.m_registry, nullptr);
         m_entityId = std::exchange(other.m_entityId, entt::null);
         m_children = std::move(other.m_children);
 
@@ -66,8 +69,12 @@ public:
         }
     }
 
-    [[nodiscard]] std::span<Entity> children() {
-        return { m_children };
+    [[nodiscard]] std::vector<Entity>& children() {
+        return m_children;
+    }
+
+    [[nodiscard]] const std::vector<Entity>& children() const {
+        return m_children ;
     }
 
     template<typename T>
@@ -110,4 +117,6 @@ public:
 
         return m_registry->get<T>(m_entityId);
     }
+
+    friend Scene;
 };

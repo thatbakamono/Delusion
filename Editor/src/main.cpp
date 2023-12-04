@@ -130,8 +130,6 @@ int main() {
 
     Editor editor(device, queue, emptyTexture, fileIconTexture, directoryIconTexture);
 
-    Scene scene;
-
     while (!glfwWindowShouldClose(window.get())) {
         glfwPollEvents();
 
@@ -142,7 +140,11 @@ int main() {
         WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(device, &encoderDescriptor);
 
         {
-            renderer.renderScene(commandEncoder, viewportTextureView, scene);
+            auto& scene = editor.scene();
+
+            if (scene.has_value()) {
+                renderer.renderScene(commandEncoder, viewportTextureView, scene.value());
+            }
         }
 
         {
@@ -152,7 +154,7 @@ int main() {
 
             ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-            editor.update(viewportTextureView, scene);
+            editor.update(viewportTextureView);
 
             ImGui::Render();
         }

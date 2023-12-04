@@ -7,11 +7,13 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 #include <nfd.hpp>
-#include <delusion/formats/ImageDecoder.hpp>
 
 #include "delusion/Components.hpp"
+#include "delusion/SceneSerde.hpp"
+#include "delusion/formats/ImageDecoder.hpp"
+#include "delusion/io/FileUtilities.hpp"
 
-void Editor::update(WGPUTextureView viewportTextureView, Scene &scene) {
+void Editor::update(WGPUTextureView viewportTextureView) {
     if (!projectPath.has_value()) {
         ImGui::Begin("Project");
 
@@ -55,41 +57,68 @@ void Editor::update(WGPUTextureView viewportTextureView, Scene &scene) {
 
         ImGui::End();
     } else {
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("Scene")) {
+                if (ImGui::MenuItem("Save", nullptr, false, m_scene.has_value())) {
+                    // TODO: Support for non-ascii characters
+                    NFD::UniquePath path;
+
+                    auto assetsDirectoryString = assetsDirectory.string();
+
+                    nfdu8filteritem_t filterItem = { "Scene file", "scene" };
+
+                    if (NFD::SaveDialog(path, &filterItem, 1, assetsDirectoryString.c_str()) == NFD_OKAY) {
+                        std::ofstream stream(path.get());
+
+                        stream << SceneSerde::serialize(m_scene.value());
+                    }
+                }
+
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMainMenuBar();
+        }
+
         {
             ImGui::Begin("Hierarchy");
 
-            if (ImGui::BeginPopupContextWindow("hierarchy_context_menu", 1)) {
-                if (ImGui::MenuItem("Create entity")) {
-                    scene.create();
+            if (m_scene.has_value()) {
+                auto& currentScene = m_scene.value();
+
+                if (ImGui::BeginPopupContextWindow("hierarchy_context_menu", 1)) {
+                    if (ImGui::MenuItem("Create entity")) {
+                        currentScene.create();
+                    }
+
+                    ImGui::EndPopup();
                 }
 
-                ImGui::EndPopup();
-            }
+                auto& entities = currentScene.entities();
 
-            auto& entities = scene.entities();
+                std::optional<size_t> entityToDestroyIndex = {};
 
-            std::optional<size_t> entityToDestroyIndex = {};
+                for (size_t i = 0; i < entities.size(); i++) {
+                    auto& entity = entities[i];
 
-            for (size_t i = 0; i < entities.size(); i++) {
-                auto& entity = entities[i];
+                    auto destroy = entityHierarchy(entity);
 
-                auto destroy = entityHierarchy(entity);
-
-                if (destroy) {
-                    entityToDestroyIndex = std::make_optional(i);
+                    if (destroy) {
+                        entityToDestroyIndex = std::make_optional(i);
+                    }
                 }
-            }
 
-            if (entityToDestroyIndex.has_value()) {
-                if (selectedEntity == &entities[entityToDestroyIndex.value()]) {
+                if (entityToDestroyIndex.has_value()) {
+                    if (selectedEntity == &entities[entityToDestroyIndex.value()]) {
+                        selectedEntity = nullptr;
+                    }
+
+                    currentScene.remove(entities[entityToDestroyIndex.value()]);
+                }
+
+                if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(0)) {
                     selectedEntity = nullptr;
                 }
-
-                scene.remove(entities[entityToDestroyIndex.value()]);
-            }
-
-            if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(0)) {
-                selectedEntity = nullptr;
             }
 
             ImGui::End();
@@ -101,6 +130,21 @@ void Editor::update(WGPUTextureView viewportTextureView, Scene &scene) {
             ImVec2 availableSpace = ImGui::GetContentRegionAvail();
 
             ImGui::Image(viewportTextureView, availableSpace);
+
+            if (ImGui::BeginDragDropTarget()) {
+                auto payload = ImGui::AcceptDragDropPayload("scene");
+
+                if (payload != nullptr) {
+                    auto source = readAsString(static_cast<char*>(payload->Data));
+
+                    if (source.has_value()) {
+                        selectedEntity = nullptr;
+                        m_scene = std::make_optional(SceneSerde::deserialize(source.value()));
+                    }
+                }
+
+                ImGui::EndDragDropTarget();
+            }
 
             ImGui::End();
         }
@@ -137,16 +181,30 @@ void Editor::update(WGPUTextureView viewportTextureView, Scene &scene) {
                 auto extension = path.filename().extension();
                 auto extensionText = extension.string();
 
+                ImGui::PushID(name.c_str());
+
                 ImGui::ImageButton(iconTexture->view(), { thumbnailSize, thumbnailSize }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
 
-                // TODO: Ask some kind of FormatRegistry whether it's a supported image format
-                if (extensionText == ".png") {
-                    if (ImGui::BeginDragDropSource()) {
-                        auto pathText = path.string();
+                if (!entry.is_directory()) {
+                    // TODO: Ask some kind of FormatRegistry whether it's a supported image format
+                    if (extensionText == ".png") {
+                        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                            auto pathText = path.string();
 
-                        ImGui::SetDragDropPayload("image", pathText.c_str(), pathText.size() + 1, ImGuiCond_Once);
+                            ImGui::SetDragDropPayload("image", pathText.c_str(), pathText.size() + 1, ImGuiCond_Once);
 
-                        ImGui::EndDragDropSource();
+                            ImGui::EndDragDropSource();
+                        }
+                    }
+
+                    if (extensionText == ".scene") {
+                        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                            auto pathText = path.string();
+
+                            ImGui::SetDragDropPayload("scene", pathText.c_str(), pathText.size() + 1, ImGuiCond_Once);
+
+                            ImGui::EndDragDropSource();
+                        }
                     }
                 }
 
@@ -159,6 +217,8 @@ void Editor::update(WGPUTextureView viewportTextureView, Scene &scene) {
                 ImGui::TextWrapped("%s", name.c_str());
 
                 ImGui::NextColumn();
+
+                ImGui::PopID();
             }
 
             ImGui::Columns(1);
@@ -277,7 +337,7 @@ bool Editor::entityHierarchy(Entity &entity) {
     }
 
     if (isOpen) {
-        auto children = entity.children();
+        auto& children = entity.children();
 
         std::optional<size_t> entityToDestroyIndex = {};
 

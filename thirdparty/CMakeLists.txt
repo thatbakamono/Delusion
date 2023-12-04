@@ -14,3 +14,5 @@ target_include_directories(wgpu-native INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/wg
 if(WIN32)
 target_link_libraries(wgpu-native INTERFACE d3dcompiler.lib opengl32.lib)
 endif()
+
+add_subdirectory(yaml-cpp)

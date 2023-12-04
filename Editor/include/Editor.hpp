@@ -11,8 +11,10 @@ class Editor {
 private:
     Entity* selectedEntity = nullptr;
 
-    const std::filesystem::path assetsDirectory = "assets";
-    std::filesystem::path currentDirectory = assetsDirectory;
+    std::optional<std::filesystem::path> projectPath;
+
+    std::filesystem::path assetsDirectory;
+    std::filesystem::path currentDirectory;
 
     std::shared_ptr<Texture2D> fileIconTexture;
     std::shared_ptr<Texture2D> directoryIconTexture;

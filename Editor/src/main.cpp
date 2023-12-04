@@ -9,6 +9,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_wgpu.h>
+#include <nfd.hpp>
 
 #include <delusion/Engine.hpp>
 #include <delusion/Scene.hpp>
@@ -18,6 +19,8 @@
 #include "Editor.hpp"
 
 int main() {
+    NFD_Init();
+
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -206,6 +209,8 @@ int main() {
     wgpuInstanceRelease(instance);
 
     glfwTerminate();
+
+    NFD_Quit();
 
     return 0;
 }

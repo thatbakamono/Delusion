@@ -10,7 +10,7 @@ public:
 
     [[nodiscard]] static std::string serialize(const Scene& scene);
 private:
-    static void deserializeEntity(YAML::Node& entityNode, Entity& parentEntity);
+    static void deserializeEntity(YAML::Node& entityNode, Entity& entity);
 
     static void serializeEntity(YAML::Emitter& emitter, const Entity& entity);
 };

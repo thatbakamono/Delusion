@@ -4,32 +4,32 @@
 
 #include <webgpu.h>
 
+#include "Project.hpp"
 #include "delusion/Scene.hpp"
 #include "delusion/graphics/Texture2D.hpp"
 
 class Editor {
 private:
-    Entity *selectedEntity = nullptr;
+    WGPUDevice m_device;
+    WGPUQueue m_queue;
 
-    std::optional<std::filesystem::path> projectPath;
+    std::shared_ptr<Texture2D> m_emptyTexture;
+    std::shared_ptr<Texture2D> m_fileIconTexture;
+    std::shared_ptr<Texture2D> m_directoryIconTexture;
 
-    std::filesystem::path assetsDirectory;
-    std::filesystem::path currentDirectory;
+    std::optional<Project> m_project;
 
-    WGPUDevice device;
-    WGPUQueue queue;
+    Entity *m_selectedEntity = nullptr;
 
-    std::shared_ptr<Texture2D> emptyTexture;
-    std::shared_ptr<Texture2D> fileIconTexture;
-    std::shared_ptr<Texture2D> directoryIconTexture;
+    std::filesystem::path m_currentDirectory;
 
     std::optional<Scene> m_scene;
 public:
     Editor(WGPUDevice device, WGPUQueue queue, std::shared_ptr<Texture2D> emptyTexture,
            std::shared_ptr<Texture2D> fileIconTexture,
            std::shared_ptr<Texture2D> directoryIconTexture)
-            : device(device), queue(queue), emptyTexture(std::move(emptyTexture)),
-              fileIconTexture(std::move(fileIconTexture)), directoryIconTexture(std::move(directoryIconTexture)) {}
+            : m_device(device), m_queue(queue), m_emptyTexture(std::move(emptyTexture)),
+              m_fileIconTexture(std::move(fileIconTexture)), m_directoryIconTexture(std::move(directoryIconTexture)) {}
 
     void update(WGPUTextureView viewportTextureView);
 
@@ -37,6 +37,13 @@ public:
         return m_scene;
     }
 private:
+    void onProjectPanel();
+    void onMenuBar(Project& project);
+    void onHierarchyPanel();
+    void onViewportPanel(WGPUTextureView viewportTextureView);
+    void onAssetBrowserPanel(Project& project);
+    void onPropertiesPanel();
+
     bool entityHierarchy(Entity &entity);
 };
 

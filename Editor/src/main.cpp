@@ -51,8 +51,23 @@ int main() {
 
     Editor editor(backend.device(), backend.queue(), emptyTexture, fileIconTexture, directoryIconTexture);
 
+    int previousWidth = defaultWindowWidth;
+    int previousHeight = defaultWindowHeight;
+
     while (window.isOpen()) {
         engine.pollEvents();
+
+        int currentWidth {};
+        int currentHeight {};
+
+        glfwGetWindowSize(window.inner(), &currentWidth, &currentHeight);
+
+        if (currentWidth != previousWidth || currentHeight != previousHeight) {
+            backend.configureSurface(static_cast<uint32_t>(currentWidth), static_cast<uint32_t>(currentHeight));
+
+            previousWidth = currentWidth;
+            previousHeight = currentHeight;
+        }
 
         WGPUCommandEncoderDescriptor encoderDescriptor = {
                 .nextInChain = nullptr,

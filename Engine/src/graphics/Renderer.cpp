@@ -238,4 +238,6 @@ void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView re
         wgpuBindGroupLayoutRelease(bindGroupLayout);
         wgpuBufferRelease(uniformBuffer);
     }
+
+    wgpuSamplerRelease(sampler);
 }

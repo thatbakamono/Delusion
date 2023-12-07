@@ -2,15 +2,22 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <utility>
+
+#include "delusion/AssetManager.hpp"
 #include "delusion/Scene.hpp"
 
 class SceneSerde {
-public:
-    [[nodiscard]] static Scene deserialize(const std::string& input);
-
-    [[nodiscard]] static std::string serialize(const Scene& scene);
 private:
-    static void deserializeEntity(YAML::Node& entityNode, Entity& entity);
+    std::shared_ptr<AssetManager> m_assetManager;
+public:
+    explicit SceneSerde(std::shared_ptr<AssetManager> assetManager) : m_assetManager(std::move(assetManager)) {}
 
-    static void serializeEntity(YAML::Emitter& emitter, const Entity& entity);
+    [[nodiscard]] Scene deserialize(const std::string& input);
+
+    [[nodiscard]] std::string serialize(const Scene& scene);
+private:
+    void deserializeEntity(YAML::Node& entityNode, Entity& entity);
+
+    void serializeEntity(YAML::Emitter& emitter, const Entity& entity);
 };

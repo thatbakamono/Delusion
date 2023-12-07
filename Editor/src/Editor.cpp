@@ -10,7 +10,6 @@
 
 #include "delusion/Components.hpp"
 #include "delusion/SceneSerde.hpp"
-#include "delusion/formats/ImageDecoder.hpp"
 #include "delusion/io/FileUtilities.hpp"
 
 void Editor::update(WGPUTextureView viewportTextureView) {
@@ -46,6 +45,10 @@ void Editor::onProjectPanel() {
             std::filesystem::create_directory(m_project->assetsDirectoryPath());
 
             m_currentDirectory = m_project->assetsDirectoryPath();
+
+            m_fileWatch = std::make_unique<filewatch::FileWatch<std::string>>(m_project->assetsDirectoryPath().string(), [&](const std::string &path, const filewatch::Event event) {
+                onFileSystemChange(path, event);
+            });
         }
     }
 
@@ -61,6 +64,13 @@ void Editor::onProjectPanel() {
 
             m_project = std::make_optional(Project(projectFilePath.parent_path()));
             m_currentDirectory = m_project->assetsDirectoryPath();
+
+            m_assetManager->generateMetadataForAllFiles(m_project->assetsDirectoryPath());
+            m_assetManager->loadMappings(m_project->assetsDirectoryPath());
+
+            m_fileWatch = std::make_unique<filewatch::FileWatch<std::string>>(m_project->assetsDirectoryPath().string(), [&](const std::string &path, const filewatch::Event event) {
+                onFileSystemChange(path, event);
+            });
         }
     }
 
@@ -81,7 +91,7 @@ void Editor::onMenuBar(Project& project) {
                 if (NFD::SaveDialog(path, &filterItem, 1, assetsDirectoryString.c_str()) == NFD_OKAY) {
                     std::ofstream stream(path.get());
 
-                    stream << SceneSerde::serialize(m_scene.value());
+                    stream << m_sceneSerde.serialize(m_scene.value());
                 }
             }
 
@@ -151,7 +161,7 @@ void Editor::onViewportPanel(WGPUTextureView viewportTextureView) {
 
             if (source.has_value()) {
                 m_selectedEntity = nullptr;
-                m_scene = std::make_optional(SceneSerde::deserialize(source.value()));
+                m_scene = std::make_optional(m_sceneSerde.deserialize(source.value()));
             }
         }
 
@@ -185,13 +195,18 @@ void Editor::onAssetBrowserPanel(Project& project) {
 
     for (const auto& entry : std::filesystem::directory_iterator(m_currentDirectory)) {
         const auto& path = entry.path();
+
+        auto extension = path.filename().extension();
+        auto extensionText = extension.string();
+
+        if (extensionText == ".metadata") {
+            continue;
+        }
+
         // TODO: Support for non-ascii characters
         std::string name = path.filename().string();
 
         auto iconTexture = entry.is_directory() ? m_directoryIconTexture : m_fileIconTexture;
-
-        auto extension = path.filename().extension();
-        auto extensionText = extension.string();
 
         ImGui::PushID(name.c_str());
 
@@ -285,8 +300,13 @@ void Editor::onPropertiesPanel() {
                     auto payload = ImGui::AcceptDragDropPayload("image");
 
                     if (payload != nullptr) {
-                        auto image = ImageDecoder::decode(static_cast<char*>(payload->Data));
-                        std::shared_ptr<Texture2D> texture = Texture2D::create(m_device, m_queue, image);
+                        auto path = std::filesystem::path(static_cast<char*>(payload->Data));
+
+                        if (!m_assetManager->isLoaded(path)) {
+                            m_assetManager->loadAsset(path);
+                        }
+
+                        auto texture = m_assetManager->getTextureById(m_assetManager->getIdByPath(path));
 
                         sprite.texture = texture;
                     }
@@ -373,4 +393,35 @@ bool Editor::entityHierarchy(Entity &entity) {
     }
 
     return destroy;
+}
+
+void Editor::onFileSystemChange(const std::string &relativePath, const filewatch::Event event) {
+    std::filesystem::path path = m_project->assetsDirectoryPath() / relativePath;
+
+    switch (event)
+    {
+        case filewatch::Event::added:
+            m_assetManager->generateMetadataForFile(path);
+            m_assetManager->loadMapping(path);
+
+            break;
+        case filewatch::Event::removed:
+            m_assetManager->unloadMapping(m_assetManager->getIdByPath(path));
+            m_assetManager->deleteMetadataOfFile(path);
+
+            break;
+        case filewatch::Event::renamed_old:
+            m_fileBeingRenamed = std::make_optional(path);
+
+            break;
+        case filewatch::Event::renamed_new:
+            m_assetManager->updateMapping(m_assetManager->getIdByPath(m_fileBeingRenamed.value()), path);
+            m_assetManager->renameMetadataOfFile(m_fileBeingRenamed.value(), path);
+
+            m_fileBeingRenamed = std::nullopt;
+
+            break;
+        default:
+            break;
+    };
 }

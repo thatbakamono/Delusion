@@ -122,11 +122,11 @@ int main() {
 
     auto fileIconImage = ImageDecoder::decode("file.png");
     auto directoryIconImage = ImageDecoder::decode("directory.png");
-    std::shared_ptr<Texture2D> fileIconTexture = Texture2D::create(device, queue, fileIconImage);
-    std::shared_ptr<Texture2D> directoryIconTexture = Texture2D::create(device, queue, directoryIconImage);
+    std::shared_ptr<Texture2D> fileIconTexture = Texture2D::create(UniqueId(), device, queue, fileIconImage);
+    std::shared_ptr<Texture2D> directoryIconTexture = Texture2D::create(UniqueId(), device, queue, directoryIconImage);
 
     Image emptyImage(1, 1, { 0, 0, 0, 0 });
-    std::shared_ptr<Texture2D> emptyTexture = Texture2D::create(device, queue, emptyImage);
+    std::shared_ptr<Texture2D> emptyTexture = Texture2D::create(UniqueId(), device, queue, emptyImage);
 
     Editor editor(device, queue, emptyTexture, fileIconTexture, directoryIconTexture);
 

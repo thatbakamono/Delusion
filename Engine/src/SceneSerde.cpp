@@ -56,6 +56,21 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
 
             entity.addComponent<Transform>(position, scale, rotation);
         }
+
+        auto spriteNode = componentsNode["sprite"];
+
+        if (spriteNode) {
+            auto idNode = spriteNode["id"];
+            auto id = UniqueId(idNode.as<uint64_t>());
+
+            if (!m_assetManager->isLoaded(id)) {
+                m_assetManager->loadAsset(id);
+            }
+
+            auto texture = m_assetManager->getTextureById(id);
+
+            entity.addComponent<Sprite>(texture);
+        }
     }
 
     auto childrenNode = entityNode["children"];
@@ -74,41 +89,55 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
     emitter << YAML::BeginMap;
 
     // TODO: Implement some kind of component registry with metadata, so it doesn't have to be done manually
-    if (entity.hasComponent<Transform>()) {
+    if (entity.hasComponent<Transform>() || entity.hasComponent<Sprite>()) {
         emitter << YAML::Key << "components";
         emitter << YAML::BeginMap;
 
-        const auto& transform = entity.getComponent<Transform>();
+        if (entity.hasComponent<Transform>()) {
+            const auto& transform = entity.getComponent<Transform>();
 
-        emitter << YAML::Key << "transform";
-        emitter << YAML::BeginMap;
+            emitter << YAML::Key << "transform";
+            emitter << YAML::BeginMap;
 
-        emitter << YAML::Key << "position";
-        emitter << YAML::BeginMap;
+            emitter << YAML::Key << "position";
+            emitter << YAML::BeginMap;
 
-        emitter << YAML::Key << "x";
-        emitter << YAML::Value << transform.position.x;
+            emitter << YAML::Key << "x";
+            emitter << YAML::Value << transform.position.x;
 
-        emitter << YAML::Key << "y";
-        emitter << YAML::Value << transform.position.y;
+            emitter << YAML::Key << "y";
+            emitter << YAML::Value << transform.position.y;
 
-        emitter << YAML::EndMap;
+            emitter << YAML::EndMap;
 
-        emitter << YAML::Key << "rotation";
-        emitter << YAML::Value << transform.rotation;
+            emitter << YAML::Key << "rotation";
+            emitter << YAML::Value << transform.rotation;
 
-        emitter << YAML::Key << "scale";
-        emitter << YAML::BeginMap;
+            emitter << YAML::Key << "scale";
+            emitter << YAML::BeginMap;
 
-        emitter << YAML::Key << "width";
-        emitter << YAML::Value << transform.scale.x;
+            emitter << YAML::Key << "width";
+            emitter << YAML::Value << transform.scale.x;
 
-        emitter << YAML::Key << "height";
-        emitter << YAML::Value << transform.scale.y;
+            emitter << YAML::Key << "height";
+            emitter << YAML::Value << transform.scale.y;
 
-        emitter << YAML::EndMap;
+            emitter << YAML::EndMap;
 
-        emitter << YAML::EndMap;
+            emitter << YAML::EndMap;
+        }
+
+        if (entity.hasComponent<Sprite>()) {
+            const auto& sprite = entity.getComponent<Sprite>();
+
+            emitter << YAML::Key << "sprite";
+            emitter << YAML::BeginMap;
+
+            emitter << YAML::Key << "id";
+            emitter << YAML::Value << sprite.texture->id().value();
+
+            emitter << YAML::EndMap;
+        }
 
         emitter << YAML::EndMap;
     }

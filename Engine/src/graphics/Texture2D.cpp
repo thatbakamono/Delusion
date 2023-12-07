@@ -7,7 +7,7 @@ Texture2D::~Texture2D() {
     wgpuTextureRelease(m_texture);
 }
 
-std::unique_ptr<Texture2D> Texture2D::create(WGPUDevice device, WGPUQueue queue, Image &image) {
+std::unique_ptr<Texture2D> Texture2D::create(UniqueId id, WGPUDevice device, WGPUQueue queue, Image &image) {
     WGPUTextureDescriptor textureDescriptor = {
             .nextInChain = nullptr,
             .label = "Texture2D",
@@ -51,5 +51,5 @@ std::unique_ptr<Texture2D> Texture2D::create(WGPUDevice device, WGPUQueue queue,
 
     wgpuQueueWriteTexture(queue, &destination, image.pixels().data(), image.pixels().size(), &source, &textureDescriptor.size);
 
-    return std::unique_ptr<Texture2D>(new Texture2D(texture, textureView));
+    return std::unique_ptr<Texture2D>(new Texture2D(id, texture, textureView));
 }

@@ -25,3 +25,6 @@
 [submodule "thirdparty/yaml-cpp"]
 	path = thirdparty/yaml-cpp
 	url = https://github.com/DelusionEngine/yaml-cpp.git
+[submodule "thirdparty/filewatch"]
+	path = thirdparty/filewatch
+	url = https://github.com/DelusionEngine/filewatch

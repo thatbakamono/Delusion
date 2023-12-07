@@ -13,7 +13,7 @@
 #include "delusion/SceneSerde.hpp"
 #include "delusion/io/FileUtilities.hpp"
 
-void Editor::update(Texture2D* viewportTexture) {
+void Editor::update(std::shared_ptr<Texture2D>& viewportTexture) {
     if (!m_project.has_value()) {
         onProjectPanel();
     } else {
@@ -147,10 +147,19 @@ void Editor::onHierarchyPanel() {
     ImGui::End();
 }
 
-void Editor::onViewportPanel(Texture2D* viewportTexture) {
+void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture) {
     ImGui::Begin("Viewport");
 
     ImVec2 availableSpace = ImGui::GetContentRegionAvail();
+
+    auto availableWidth = static_cast<uint32_t>(availableSpace.x);
+    auto availableHeight = static_cast<uint32_t>(availableSpace.y);
+
+    if (viewportTexture->width() != availableWidth || viewportTexture->height() != availableHeight) {
+        std::shared_ptr<Texture2D> newTexture = Texture2D::create(viewportTexture->id(), m_device, availableWidth, availableHeight, true);
+
+        viewportTexture.swap(newTexture);
+    }
 
     ImGui::Image(viewportTexture->view(), availableSpace);
 

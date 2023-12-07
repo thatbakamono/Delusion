@@ -75,7 +75,7 @@ int main() {
 
             ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-            editor.update(viewportTexture.get());
+            editor.update(viewportTexture);
 
             ImGui::Render();
         }

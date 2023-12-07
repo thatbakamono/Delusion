@@ -3,9 +3,8 @@
 #include <fstream>
 #include <memory>
 
-#include <glfw/glfw3.h>
-#include <webgpu.h>
 #include <glfw3webgpu.h>
+#include <webgpu.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_wgpu.h>
@@ -13,29 +12,25 @@
 
 #include <delusion/Engine.hpp>
 #include <delusion/Scene.hpp>
+#include <delusion/Window.hpp>
 #include <delusion/formats/ImageDecoder.hpp>
 #include <delusion/graphics/Renderer.hpp>
 
 #include "Editor.hpp"
 
 int main() {
+    Engine engine;
+
     NFD_Init();
-
-    glfwInit();
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     WGPUInstanceDescriptor descriptor = {
             .nextInChain = nullptr
     };
     WGPUInstance instance = wgpuCreateInstance(&descriptor);
 
-    std::unique_ptr<GLFWwindow, decltype(glfwDestroyWindow) *> window{
-            glfwCreateWindow(1280, 720, "", nullptr, nullptr),
-            &glfwDestroyWindow
-    };
+    Window window("", 1280, 720);
 
-    WGPUSurface surface = glfwGetWGPUSurface(instance, window.get());
+    WGPUSurface surface = glfwGetWGPUSurface(instance, window.inner());
 
     WGPURequestAdapterOptions adapterOptions = {
             .nextInChain = nullptr,
@@ -102,7 +97,7 @@ int main() {
 
     std::shared_ptr<Texture2D> viewportTexture = Texture2D::create(UniqueId(), device, 1280, 720, true);
 
-    ImGui_ImplGlfw_InitForOther(window.get(), true);
+    ImGui_ImplGlfw_InitForOther(window.inner(), true);
     ImGui_ImplWGPU_Init(device, 3, preferredFormat, WGPUTextureFormat_Undefined);
 
     Renderer renderer = Renderer::create(device, queue, surfaceCapabilities);
@@ -117,8 +112,8 @@ int main() {
 
     Editor editor(device, queue, emptyTexture, fileIconTexture, directoryIconTexture);
 
-    while (!glfwWindowShouldClose(window.get())) {
-        glfwPollEvents();
+    while (window.isOpen()) {
+        engine.pollEvents();
 
         WGPUCommandEncoderDescriptor encoderDescriptor = {
                 .nextInChain = nullptr,
@@ -197,8 +192,6 @@ int main() {
     wgpuAdapterRelease(adapter);
     wgpuSurfaceRelease(surface);
     wgpuInstanceRelease(instance);
-
-    glfwTerminate();
 
     NFD_Quit();
 

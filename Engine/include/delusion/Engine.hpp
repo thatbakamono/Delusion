@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include <glfw/glfw3.h>
-#include <webgpu.h>
 
 class Engine {
 public:
@@ -24,7 +23,3 @@ public:
         glfwPollEvents();
     }
 };
-
-[[nodiscard]] WGPUAdapter requestAdapter(WGPUInstance instance, WGPURequestAdapterOptions const *options);
-
-[[nodiscard]] WGPUDevice requestDevice(WGPUAdapter adapter, WGPUDeviceDescriptor const *descriptor);

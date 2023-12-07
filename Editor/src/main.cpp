@@ -1,9 +1,5 @@
-#include <cassert>
-#include <iostream>
-#include <fstream>
 #include <memory>
 
-#include <glfw3webgpu.h>
 #include <webgpu.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -11,106 +7,49 @@
 #include <nfd.hpp>
 
 #include <delusion/Engine.hpp>
-#include <delusion/Scene.hpp>
 #include <delusion/Window.hpp>
 #include <delusion/formats/ImageDecoder.hpp>
+#include <delusion/graphics/GraphicsBackend.hpp>
 #include <delusion/graphics/Renderer.hpp>
 
 #include "Editor.hpp"
 
 int main() {
+    constexpr int defaultWindowWidth = 1280;
+    constexpr int defaultWindowHeight = 720;
+
     Engine engine;
 
     NFD_Init();
 
-    WGPUInstanceDescriptor descriptor = {
-            .nextInChain = nullptr
-    };
-    WGPUInstance instance = wgpuCreateInstance(&descriptor);
+    GraphicsBackend backend;
 
-    Window window("", 1280, 720);
+    Window window("", defaultWindowWidth, defaultWindowHeight);
 
-    WGPUSurface surface = glfwGetWGPUSurface(instance, window.inner());
-
-    WGPURequestAdapterOptions adapterOptions = {
-            .nextInChain = nullptr,
-            .compatibleSurface = surface,
-    };
-
-    WGPUAdapter adapter = requestAdapter(instance, &adapterOptions);
-
-    WGPUDeviceDescriptor deviceDescriptor = {
-            .nextInChain = nullptr,
-            .label = "Device",
-            .requiredFeatureCount = 0,
-            .requiredLimits = nullptr,
-            .defaultQueue = WGPUQueueDescriptor{
-                    .nextInChain = nullptr,
-                    .label = "Queue",
-            },
-    };
-
-    WGPUDevice device = requestDevice(adapter, &deviceDescriptor);
-
-    auto onDeviceError = [](WGPUErrorType type, char const *message, void *) {
-        std::cout << "Uncaptured m_device error: type " << type;
-        if (message) std::cout << " (" << message << ")";
-        std::cout << std::endl;
-    };
-    wgpuDeviceSetUncapturedErrorCallback(device, onDeviceError, nullptr);
-
-    WGPUQueue queue = wgpuDeviceGetQueue(device);
-
-    auto onQueueWorkDone = [](WGPUQueueWorkDoneStatus status, void *) {
-        std::cout << "Queued work finished with status: " << status << std::endl;
-    };
-    wgpuQueueOnSubmittedWorkDone(queue, onQueueWorkDone, nullptr);
-
-    WGPUSurfaceConfiguration surfaceConfiguration = {
-            .nextInChain = nullptr,
-            .device = device,
-            .usage = WGPUTextureUsage_RenderAttachment,
-            .viewFormatCount = 0,
-            .viewFormats = nullptr,
-            .width = 1280,
-            .height = 720,
-            .presentMode = WGPUPresentMode_Fifo,
-    };
-
-    WGPUSurfaceCapabilities surfaceCapabilities = {};
-    wgpuSurfaceGetCapabilities(surface, adapter, &surfaceCapabilities);
-
-    assert(surfaceCapabilities.alphaModeCount > 0);
-    assert(surfaceCapabilities.formatCount > 0);
-
-    surfaceConfiguration.alphaMode = surfaceCapabilities.alphaModes[0];
-    surfaceConfiguration.format = surfaceCapabilities.formats[0];
-
-    wgpuSurfaceConfigure(surface, &surfaceConfiguration);
-
-    WGPUTextureFormat preferredFormat = wgpuSurfaceGetPreferredFormat(surface, adapter);
+    backend.setup(window);
+    backend.configureSurface(defaultWindowWidth, defaultWindowHeight);
 
     ImGui::CreateContext();
 
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    std::shared_ptr<Texture2D> viewportTexture = Texture2D::create(UniqueId(), device, 1280, 720, true);
+    std::shared_ptr<Texture2D> viewportTexture = Texture2D::create(UniqueId(), backend.device(), defaultWindowWidth, defaultWindowHeight, true);
 
     ImGui_ImplGlfw_InitForOther(window.inner(), true);
-    ImGui_ImplWGPU_Init(device, 3, preferredFormat, WGPUTextureFormat_Undefined);
+    ImGui_ImplWGPU_Init(backend.device(), 3, backend.preferredFormat(), WGPUTextureFormat_Undefined);
 
-    Renderer renderer = Renderer::create(device, queue, surfaceCapabilities);
+    Renderer renderer = Renderer::create(backend.device(), backend.queue(), backend.surfaceCapabilities());
 
     auto fileIconImage = ImageDecoder::decode("file.png");
     auto directoryIconImage = ImageDecoder::decode("directory.png");
-    std::shared_ptr<Texture2D> fileIconTexture = Texture2D::create(UniqueId(), device, queue, fileIconImage);
-    std::shared_ptr<Texture2D> directoryIconTexture = Texture2D::create(UniqueId(), device, queue, directoryIconImage);
+    std::shared_ptr<Texture2D> fileIconTexture = Texture2D::create(UniqueId(), backend.device(), backend.queue(), fileIconImage);
+    std::shared_ptr<Texture2D> directoryIconTexture = Texture2D::create(UniqueId(), backend.device(), backend.queue(), directoryIconImage);
 
     Image emptyImage(1, 1, { 0, 0, 0, 0 });
-    std::shared_ptr<Texture2D> emptyTexture = Texture2D::create(UniqueId(), device, queue, emptyImage);
+    std::shared_ptr<Texture2D> emptyTexture = Texture2D::create(UniqueId(), backend.device(), backend.queue(), emptyImage);
 
-    Editor editor(device, queue, emptyTexture, fileIconTexture, directoryIconTexture);
+    Editor editor(backend.device(), backend.queue(), emptyTexture, fileIconTexture, directoryIconTexture);
 
     while (window.isOpen()) {
         engine.pollEvents();
@@ -119,7 +58,7 @@ int main() {
                 .nextInChain = nullptr,
                 .label = "Command encoder",
         };
-        WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(device, &encoderDescriptor);
+        WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(backend.device(), &encoderDescriptor);
 
         {
             auto& scene = editor.scene();
@@ -142,7 +81,7 @@ int main() {
         }
 
         WGPUSurfaceTexture surfaceTexture;
-        wgpuSurfaceGetCurrentTexture(surface, &surfaceTexture);
+        wgpuSurfaceGetCurrentTexture(backend.surface(), &surfaceTexture);
 
         if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
             continue;
@@ -177,8 +116,8 @@ int main() {
         };
         WGPUCommandBuffer commandBuffer = wgpuCommandEncoderFinish(commandEncoder, &commandBufferDescriptor);
 
-        wgpuQueueSubmit(queue, 1, &commandBuffer);
-        wgpuSurfacePresent(surface);
+        wgpuQueueSubmit(backend.queue(), 1, &commandBuffer);
+        wgpuSurfacePresent(backend.surface());
 
         wgpuCommandBufferReference(commandBuffer);
         wgpuRenderPassEncoderRelease(renderPassEncoder);
@@ -187,11 +126,10 @@ int main() {
         wgpuTextureRelease(surfaceTexture.texture);
     }
 
-    wgpuQueueRelease(queue);
-    wgpuDeviceRelease(device);
-    wgpuAdapterRelease(adapter);
-    wgpuSurfaceRelease(surface);
-    wgpuInstanceRelease(instance);
+    ImGui_ImplWGPU_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    
+    ImGui::DestroyContext();
 
     NFD_Quit();
 

@@ -2,8 +2,6 @@
 
 Texture2D::~Texture2D() {
     wgpuTextureViewRelease(m_textureView);
-
-    wgpuTextureDestroy(m_texture);
     wgpuTextureRelease(m_texture);
 }
 

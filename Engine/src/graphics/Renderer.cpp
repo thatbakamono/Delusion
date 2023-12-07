@@ -98,6 +98,8 @@ void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView re
     };
     WGPUSampler sampler = wgpuDeviceCreateSampler(device, &samplerDescriptor);
 
+    bool isFirst = true;
+
     for (Entity &entity: scene.entities()) {
         if (!entity.hasComponent<Transform>() || !entity.hasComponent<Sprite>())
             continue;
@@ -209,7 +211,7 @@ void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView re
         WGPURenderPassColorAttachment renderPassColorAttachment = {
                 .view = renderTarget,
                 .resolveTarget = nullptr,
-                .loadOp = WGPULoadOp_Clear,
+                .loadOp = isFirst ? WGPULoadOp_Clear : WGPULoadOp_Load,
                 .storeOp = WGPUStoreOp_Store,
                 .clearValue = WGPUColor{0.0, 0.0, 0.0, 1.0},
         };
@@ -237,6 +239,8 @@ void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView re
         wgpuBindGroupRelease(bindGroup);
         wgpuBindGroupLayoutRelease(bindGroupLayout);
         wgpuBufferRelease(uniformBuffer);
+
+        isFirst = false;
     }
 
     wgpuSamplerRelease(sampler);

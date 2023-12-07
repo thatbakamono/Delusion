@@ -43,7 +43,7 @@ public:
               m_fileIconTexture(std::move(fileIconTexture)), m_directoryIconTexture(std::move(directoryIconTexture)),
               m_assetManager(std::make_shared<AssetManager>(device, queue)), m_sceneSerde(m_assetManager) {}
 
-    void update(WGPUTextureView viewportTextureView);
+    void update(Texture2D* viewportTexture);
 
     [[nodiscard]] std::optional<Scene>& scene() {
         return m_scene;
@@ -52,7 +52,7 @@ private:
     void onProjectPanel();
     void onMenuBar(Project& project);
     void onHierarchyPanel();
-    void onViewportPanel(WGPUTextureView viewportTextureView);
+    void onViewportPanel(Texture2D* viewportTexture);
     void onAssetBrowserPanel(Project& project);
     void onPropertiesPanel();
 

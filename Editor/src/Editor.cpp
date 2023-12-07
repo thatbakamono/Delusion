@@ -7,12 +7,13 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 #include <nfd.hpp>
+#include <utility>
 
 #include "delusion/Components.hpp"
 #include "delusion/SceneSerde.hpp"
 #include "delusion/io/FileUtilities.hpp"
 
-void Editor::update(WGPUTextureView viewportTextureView) {
+void Editor::update(Texture2D* viewportTexture) {
     if (!m_project.has_value()) {
         onProjectPanel();
     } else {
@@ -20,7 +21,7 @@ void Editor::update(WGPUTextureView viewportTextureView) {
 
         onMenuBar(project);
         onHierarchyPanel();
-        onViewportPanel(viewportTextureView);
+        onViewportPanel(viewportTexture);
         onAssetBrowserPanel(project);
         onPropertiesPanel();
     }
@@ -146,12 +147,12 @@ void Editor::onHierarchyPanel() {
     ImGui::End();
 }
 
-void Editor::onViewportPanel(WGPUTextureView viewportTextureView) {
+void Editor::onViewportPanel(Texture2D* viewportTexture) {
     ImGui::Begin("Viewport");
 
     ImVec2 availableSpace = ImGui::GetContentRegionAvail();
 
-    ImGui::Image(viewportTextureView, availableSpace);
+    ImGui::Image(viewportTexture->view(), availableSpace);
 
     if (ImGui::BeginDragDropTarget()) {
         auto payload = ImGui::AcceptDragDropPayload("scene");

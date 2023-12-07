@@ -100,20 +100,7 @@ int main() {
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    WGPUTextureDescriptor textureDescriptor = {
-            .nextInChain = nullptr,
-            .label = "Texture",
-            .usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding,
-            .dimension = WGPUTextureDimension_2D,
-            .size = WGPUExtent3D{1280, 720, 1},
-            .format = preferredFormat,
-            .mipLevelCount = 1,
-            .sampleCount = 1,
-            .viewFormatCount = 0,
-            .viewFormats = nullptr,
-    };
-    WGPUTexture viewportTexture = wgpuDeviceCreateTexture(device, &textureDescriptor);
-    WGPUTextureView viewportTextureView = wgpuTextureCreateView(viewportTexture, nullptr);
+    std::shared_ptr<Texture2D> viewportTexture = Texture2D::create(UniqueId(), device, 1280, 720, true);
 
     ImGui_ImplGlfw_InitForOther(window.get(), true);
     ImGui_ImplWGPU_Init(device, 3, preferredFormat, WGPUTextureFormat_Undefined);
@@ -143,7 +130,7 @@ int main() {
             auto& scene = editor.scene();
 
             if (scene.has_value()) {
-                renderer.renderScene(commandEncoder, viewportTextureView, scene.value());
+                renderer.renderScene(commandEncoder, viewportTexture->view(), scene.value());
             }
         }
 
@@ -154,7 +141,7 @@ int main() {
 
             ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-            editor.update(viewportTextureView);
+            editor.update(viewportTexture.get());
 
             ImGui::Render();
         }
@@ -205,8 +192,6 @@ int main() {
         wgpuTextureRelease(surfaceTexture.texture);
     }
 
-    wgpuTextureViewRelease(viewportTextureView);
-    wgpuTextureRelease(viewportTexture);
     wgpuQueueRelease(queue);
     wgpuDeviceRelease(device);
     wgpuAdapterRelease(adapter);

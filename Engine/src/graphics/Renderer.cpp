@@ -72,7 +72,7 @@ void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView re
     };
     WGPUColorTargetState targets[] = {
             WGPUColorTargetState{
-                    .format = surfaceCapabilities.formats[0],
+                    .format = WGPUTextureFormat_RGBA8Unorm,
                     .blend = &blendState,
                     .writeMask = WGPUColorWriteMask_All,
             },

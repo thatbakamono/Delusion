@@ -6,14 +6,15 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <nfd.hpp>
-#include <utility>
 
 #include "delusion/Components.hpp"
 #include "delusion/SceneSerde.hpp"
+#include "delusion/Utilities.hpp"
 #include "delusion/io/FileUtilities.hpp"
 
-void Editor::update(std::shared_ptr<Texture2D>& viewportTexture) {
+void Editor::update(std::shared_ptr<Texture2D>& viewportTexture, float deltaTime) {
     if (!m_project.has_value()) {
         onProjectPanel();
     } else {
@@ -21,7 +22,7 @@ void Editor::update(std::shared_ptr<Texture2D>& viewportTexture) {
 
         onMenuBar(project);
         onHierarchyPanel();
-        onViewportPanel(viewportTexture);
+        onViewportPanel(viewportTexture, deltaTime);
         onAssetBrowserPanel(project);
         onPropertiesPanel();
     }
@@ -147,10 +148,12 @@ void Editor::onHierarchyPanel() {
     ImGui::End();
 }
 
-void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture) {
+void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture, float deltaTime) {
     ImGui::Begin("Viewport");
 
     ImVec2 availableSpace = ImGui::GetContentRegionAvail();
+
+    m_camera.setAspectRatio(availableSpace.x / availableSpace.y);
 
     auto availableWidth = static_cast<uint32_t>(availableSpace.x);
     auto availableHeight = static_cast<uint32_t>(availableSpace.y);
@@ -162,6 +165,27 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture) {
     }
 
     ImGui::Image(viewportTexture->view(), availableSpace);
+
+    ImGui::SetItemUsingMouseWheel();
+
+    if (ImGui::IsWindowFocused()) {
+        auto dragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Middle);
+
+        glm::vec2 movement = glm::vec2(dragDelta.x * m_camera.aspectRatio() / availableSpace.x, dragDelta.y / availableSpace.y)
+                * glm::vec2(-1.0f, 1.0f) * m_camera.zoom() * deltaTime * 125.0f;
+
+        m_camera.setPosition(m_camera.position() + glm::vec3(movement, 0.0f));
+
+        ImGui::ResetMouseDragDelta(ImGuiMouseButton_Middle);
+
+        auto mouseWheelTurns = ImGui::GetIO().MouseWheel;
+
+        if (mouseWheelTurns > 0.0f) {
+            m_camera.setZoom(max(m_camera.zoom() * 0.50f, 0.015625f));
+        } else if (mouseWheelTurns < 0.0f) {
+            m_camera.setZoom(min(m_camera.zoom() * 2.0f, 64.0f));
+        }
+    }
 
     if (ImGui::BeginDragDropTarget()) {
         auto payload = ImGui::AcceptDragDropPayload("scene");

@@ -4,6 +4,7 @@
 
 #include "delusion/Components.hpp"
 #include "delusion/Scene.hpp"
+#include "delusion/graphics/OrthographicCamera.hpp"
 #include "delusion/graphics/Shader.hpp"
 
 class Renderer {
@@ -36,5 +37,5 @@ public:
 
     [[nodiscard]] static Renderer create(WGPUDevice device, WGPUQueue queue, WGPUSurfaceCapabilities surfaceCapabilities);
 
-    void renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView renderTarget, Scene &scene);
+    void renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView renderTarget, OrthographicCamera& camera, Scene &scene);
 };

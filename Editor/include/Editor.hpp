@@ -9,6 +9,7 @@
 #include "delusion/AssetManager.hpp"
 #include "delusion/Scene.hpp"
 #include "delusion/SceneSerde.hpp"
+#include "delusion/graphics/OrthographicCamera.hpp"
 #include "delusion/graphics/Texture2D.hpp"
 
 class Editor {
@@ -35,6 +36,8 @@ private:
     std::unique_ptr<filewatch::FileWatch<std::string>> m_fileWatch;
 
     std::optional<std::filesystem::path> m_fileBeingRenamed;
+
+    OrthographicCamera m_camera = OrthographicCamera(glm::vec3(0.0f, 0.0f, -1.0f));
 public:
     Editor(WGPUDevice device, WGPUQueue queue, std::shared_ptr<Texture2D> emptyTexture,
            std::shared_ptr<Texture2D> fileIconTexture,
@@ -43,16 +46,20 @@ public:
               m_fileIconTexture(std::move(fileIconTexture)), m_directoryIconTexture(std::move(directoryIconTexture)),
               m_assetManager(std::make_shared<AssetManager>(device, queue)), m_sceneSerde(m_assetManager) {}
 
-    void update(std::shared_ptr<Texture2D>& viewportTexture);
+    void update(std::shared_ptr<Texture2D>& viewportTexture, float deltaTime);
 
     [[nodiscard]] std::optional<Scene>& scene() {
         return m_scene;
+    }
+
+    [[nodiscard]] OrthographicCamera& camera() {
+        return m_camera;
     }
 private:
     void onProjectPanel();
     void onMenuBar(Project& project);
     void onHierarchyPanel();
-    void onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture);
+    void onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture, float deltaTime);
     void onAssetBrowserPanel(Project& project);
     void onPropertiesPanel();
 

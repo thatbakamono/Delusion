@@ -5,6 +5,13 @@
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
+struct Uniforms {
+    glm::mat4 transformMatrix;
+    glm::mat4 viewProjectionMatrix;
+};
+
+static_assert(sizeof(Uniforms) % 16 == 0);
+
 Renderer Renderer::create(WGPUDevice device, WGPUQueue queue, WGPUSurfaceCapabilities surfaceCapabilities) {
     auto shader = Shader::createFromFile(device, "src/shader.wgsl");
 
@@ -32,7 +39,7 @@ Renderer Renderer::create(WGPUDevice device, WGPUQueue queue, WGPUSurfaceCapabil
     return {device, queue, surfaceCapabilities, std::move(shader), vertexBuffer};
 }
 
-void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView renderTarget, Scene &scene) {
+void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView renderTarget, OrthographicCamera& camera, Scene &scene) {
     std::array<WGPUVertexAttribute, 2> attributes = {
             WGPUVertexAttribute{
                     .format = WGPUVertexFormat_Float32x2,
@@ -110,18 +117,25 @@ void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView re
         if (sprite.texture == nullptr)
             continue;
 
-        WGPUBufferDescriptor uniformBufferDescriptor = {
-                .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform,
-                .size = sizeof(glm::mat4),
-                .mappedAtCreation = false,
-        };
-        WGPUBuffer uniformBuffer = wgpuDeviceCreateBuffer(device, &uniformBufferDescriptor);
-
         glm::mat4 transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(transform.position, 0.0f)) *
                                     glm::rotate(glm::mat4(1.0f), -transform.rotation, glm::vec3(0.0f, 0.0f, 1.0f)) *
                                     glm::scale(glm::mat4(1.0f), glm::vec3(transform.scale, 1.0f));
 
-        wgpuQueueWriteBuffer(queue, uniformBuffer, 0, &transformMatrix, sizeof(transformMatrix));
+        glm::mat4 viewProjectionMatrix = camera.viewProjectionMatrix();
+
+        Uniforms uniforms = {
+            .transformMatrix = transformMatrix,
+            .viewProjectionMatrix = viewProjectionMatrix,
+        };
+
+        WGPUBufferDescriptor uniformBufferDescriptor = {
+                .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Uniform,
+                .size = sizeof(uniforms),
+                .mappedAtCreation = false,
+        };
+        WGPUBuffer uniformBuffer = wgpuDeviceCreateBuffer(device, &uniformBufferDescriptor);
+
+        wgpuQueueWriteBuffer(queue, uniformBuffer, 0, &uniforms, sizeof(uniforms));
 
         std::array<WGPUBindGroupLayoutEntry, 3> bindGroupLayoutEntries = {
                 WGPUBindGroupLayoutEntry{
@@ -147,7 +161,7 @@ void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView re
                         .visibility = WGPUShaderStage_Vertex,
                         .buffer = WGPUBufferBindingLayout{
                                 .type = WGPUBufferBindingType_Uniform,
-                                .minBindingSize = sizeof(transformMatrix),
+                                .minBindingSize = sizeof(Uniforms),
                         },
                 },
         };
@@ -174,7 +188,7 @@ void Renderer::renderScene(WGPUCommandEncoder commandEncoder, WGPUTextureView re
                         .binding = 2,
                         .buffer = uniformBuffer,
                         .offset = 0,
-                        .size = sizeof(transformMatrix),
+                        .size = sizeof(Uniforms),
                 },
         };
         WGPUBindGroupDescriptor bindGroupDescriptor = {

@@ -54,7 +54,15 @@ int main() {
     int previousWidth = defaultWindowWidth;
     int previousHeight = defaultWindowHeight;
 
+    float lastFrameTime {};
+    float currentFrameTime {};
+    float deltaTime {};
+
     while (window.isOpen()) {
+        currentFrameTime = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrameTime - lastFrameTime;
+        lastFrameTime = currentFrameTime;
+
         engine.pollEvents();
 
         int currentWidth {};
@@ -79,7 +87,7 @@ int main() {
             auto& scene = editor.scene();
 
             if (scene.has_value()) {
-                renderer.renderScene(commandEncoder, viewportTexture->view(), scene.value());
+                renderer.renderScene(commandEncoder, viewportTexture->view(), editor.camera(), scene.value());
             }
         }
 
@@ -90,7 +98,7 @@ int main() {
 
             ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-            editor.update(viewportTexture);
+            editor.update(viewportTexture, deltaTime);
 
             ImGui::Render();
         }

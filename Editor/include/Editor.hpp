@@ -20,6 +20,8 @@ private:
     std::shared_ptr<Texture2D> m_emptyTexture;
     std::shared_ptr<Texture2D> m_fileIconTexture;
     std::shared_ptr<Texture2D> m_directoryIconTexture;
+    std::shared_ptr<Texture2D> m_playIconTexture;
+    std::shared_ptr<Texture2D> m_stopIconTexture;
 
     std::shared_ptr<AssetManager> m_assetManager;
 
@@ -38,12 +40,15 @@ private:
     std::optional<std::filesystem::path> m_fileBeingRenamed;
 
     OrthographicCamera m_camera = OrthographicCamera(glm::vec3(0.0f, 0.0f, -1.0f));
+
+    bool isPlaying = false;
 public:
     Editor(WGPUDevice device, WGPUQueue queue, std::shared_ptr<Texture2D> emptyTexture,
-           std::shared_ptr<Texture2D> fileIconTexture,
-           std::shared_ptr<Texture2D> directoryIconTexture)
+           std::shared_ptr<Texture2D> fileIconTexture, std::shared_ptr<Texture2D> directoryIconTexture,
+           std::shared_ptr<Texture2D> playIconTexture, std::shared_ptr<Texture2D> stopIconTexture)
             : m_device(device), m_queue(queue), m_emptyTexture(std::move(emptyTexture)),
               m_fileIconTexture(std::move(fileIconTexture)), m_directoryIconTexture(std::move(directoryIconTexture)),
+              m_playIconTexture(std::move(playIconTexture)), m_stopIconTexture(std::move(stopIconTexture)),
               m_assetManager(std::make_shared<AssetManager>(device, queue)), m_sceneSerde(m_assetManager) {}
 
     void update(std::shared_ptr<Texture2D>& viewportTexture, float deltaTime);

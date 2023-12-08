@@ -20,6 +20,10 @@ void Editor::update(std::shared_ptr<Texture2D>& viewportTexture, float deltaTime
     } else {
         auto& project = m_project.value();
 
+        if (isPlaying && m_scene.has_value()) {
+            m_scene->onUpdate(deltaTime);
+        }
+
         onMenuBar(project);
         onHierarchyPanel();
         onViewportPanel(viewportTexture, deltaTime);
@@ -150,6 +154,20 @@ void Editor::onHierarchyPanel() {
 
 void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture, float deltaTime) {
     ImGui::Begin("Viewport");
+
+    auto icon = isPlaying ? m_stopIconTexture : m_playIconTexture;
+
+    if (ImGui::ImageButton(icon->view(), { 32.0f, 32.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f })) {
+        if (m_scene.has_value()) {
+            isPlaying = !isPlaying;
+
+            if (isPlaying) {
+                m_scene->start();
+            } else {
+                m_scene->stop();
+            }
+        }
+    }
 
     ImVec2 availableSpace = ImGui::GetContentRegionAvail();
 
@@ -292,7 +310,6 @@ void Editor::onPropertiesPanel() {
 
     if (m_selectedEntity != nullptr) {
         auto hasTransform = m_selectedEntity->hasComponent<Transform>();
-        auto hasSprite = m_selectedEntity->hasComponent<Sprite>();
 
         if (hasTransform) {
             auto& transform = m_selectedEntity->getComponent<Transform>();
@@ -311,6 +328,8 @@ void Editor::onPropertiesPanel() {
                 ImGui::DragFloat2("Scale", glm::value_ptr(transform.scale), 0.1f, 0.0f, 0.0f, "%.5f");
             }
         }
+
+        auto hasSprite = m_selectedEntity->hasComponent<Sprite>();
 
         if (hasSprite) {
             auto& sprite = m_selectedEntity->getComponent<Sprite>();
@@ -350,6 +369,74 @@ void Editor::onPropertiesPanel() {
             }
         }
 
+        auto hasRigidbody = m_selectedEntity->hasComponent<Rigidbody>();
+
+        if (hasRigidbody) {
+            if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen)) {
+                auto& rigidbody = m_selectedEntity->getComponent<Rigidbody>();
+
+                const char* types[] = {
+                        "static",
+                        "dynamic",
+                        "kinematic",
+                };
+
+                int currentItem {};
+
+                switch (rigidbody.bodyType) {
+                    case Rigidbody::BodyType::Static:
+                        currentItem = 0;
+
+                        break;
+                    case Rigidbody::BodyType::Dynamic:
+                        currentItem = 1;
+
+                        break;
+                    case Rigidbody::BodyType::Kinematic:
+                        currentItem = 2;
+
+                        break;
+                }
+
+                if (ImGui::Combo("Body type", &currentItem, types, 3)) {
+                    switch (currentItem) {
+                        case 0:
+                            rigidbody.bodyType = Rigidbody::BodyType::Static;
+
+                            break;
+                        case 1:
+                            rigidbody.bodyType = Rigidbody::BodyType::Dynamic;
+
+                            break;
+                        case 2:
+                            rigidbody.bodyType = Rigidbody::BodyType::Kinematic;
+
+                            break;
+                        default:
+                            assert(false);
+                    }
+                }
+
+                ImGui::Checkbox("Has fixed rotation", &rigidbody.hasFixedRotation);
+
+                ImGui::DragFloat("Density", &rigidbody.density, 0.1f, 0.0f, 0.0f, "%.5f");
+                ImGui::DragFloat("Friction", &rigidbody.friction, 0.1f, 0.0f, 0.0f, "%.5f");
+                ImGui::DragFloat("Restitution", &rigidbody.restitution, 0.1f, 0.0f, 0.0f, "%.5f");
+                ImGui::DragFloat("Restitution threshold", &rigidbody.restitutionThreshold, 0.1f, 0.0f, 0.0f, "%.5f");
+            }
+        }
+
+        auto hasBoxCollider = m_selectedEntity->hasComponent<BoxCollider>();
+
+        if (hasBoxCollider) {
+            if (ImGui::CollapsingHeader("Box collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+                auto& collider = m_selectedEntity->getComponent<BoxCollider>();
+
+                ImGui::DragFloat2("Size", glm::value_ptr(collider.size), 0.1f, 0.0f, 0.0f, "%.5f");
+                ImGui::DragFloat2("Offset", glm::value_ptr(collider.offset), 0.1f, 0.0f, 0.0f, "%.5f");
+            }
+        }
+
         if (ImGui::Button("Add component")) {
             ImGui::OpenPopup("add_component_popup");
         }
@@ -366,6 +453,22 @@ void Editor::onPropertiesPanel() {
             if (!hasSprite) {
                 if (ImGui::Button("Sprite")) {
                     m_selectedEntity->addComponent<Sprite>();
+
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            if (!hasRigidbody) {
+                if (ImGui::Button("Rigidbody")) {
+                    m_selectedEntity->addComponent<Rigidbody>();
+
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            if (!hasBoxCollider) {
+                if (ImGui::Button("Box collider")) {
+                    m_selectedEntity->addComponent<BoxCollider>();
 
                     ImGui::CloseCurrentPopup();
                 }

@@ -1,12 +1,16 @@
 #pragma once
 
-#include <delusion/Entity.hpp>
+#include <box2d/box2d.h>
+
+#include "delusion/Entity.hpp"
 
 class Scene {
 private:
     entt::registry m_registry;
 
     std::vector<Entity> m_entities;
+
+    std::unique_ptr<b2World> m_physicsWorld;
 public:
     Scene() = default;
 
@@ -18,21 +22,15 @@ public:
 
     Scene& operator =(Scene&& other) noexcept;
 
-    Entity& create() {
-        auto entityId = m_registry.create();
+    void start();
 
-        m_entities.emplace_back(&m_registry, entityId);
+    void stop();
 
-        return m_entities.back();
-    }
+    void onUpdate(float deltaTime);
 
-    void remove(Entity& entity) {
-        auto result = std::find(m_entities.begin(), m_entities.end(), entity);
+    Entity& create();
 
-        if (result != m_entities.end()) {
-            m_entities.erase(result);
-        }
-    }
+    void remove(Entity& entity);
 
     [[nodiscard]] std::vector<Entity>& entities() {
         return m_entities;

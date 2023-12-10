@@ -49,6 +49,10 @@ class Entity {
             return &m_registry == &other.m_registry && m_entityId == other.m_entityId;
         }
 
+        [[nodiscard]] bool operator!=(const Entity &other) noexcept {
+            return &m_registry != &other.m_registry || m_entityId != other.m_entityId;
+        }
+
         [[nodiscard]] uint32_t id() {
             return static_cast<uint32_t>(m_entityId);
         }

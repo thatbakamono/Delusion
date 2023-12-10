@@ -37,6 +37,16 @@ add_custom_target(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/DelusionSharp
 )
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if (MSVC)
+        add_compile_options(/fsanitize=address)
+        add_link_options(/fsanitize=address)
+    else ()
+        add_compile_options(-fsanitize=address)
+        add_link_options(-fsanitize=address)
+    endif()
+endif ()
+
 add_subdirectory(Editor)
 add_subdirectory(Engine)
 add_subdirectory(firstparty)

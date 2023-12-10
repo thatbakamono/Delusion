@@ -4,14 +4,15 @@
 
 std::unique_ptr<Shader> Shader::create(WGPUDevice device, const std::string &source) {
     WGPUShaderModuleWGSLDescriptor shaderModuleWgslDescriptor = {
-            .chain = WGPUChainedStruct{
-                    .sType = WGPUSType_ShaderModuleWGSLDescriptor,
+        .chain =
+            WGPUChainedStruct {
+                .sType = WGPUSType_ShaderModuleWGSLDescriptor,
             },
-            .code = source.c_str(),
+        .code = source.c_str(),
     };
     WGPUShaderModuleDescriptor shaderModuleDescriptor = {
-            .nextInChain = reinterpret_cast<WGPUChainedStruct *>(&shaderModuleWgslDescriptor),
-            .label = "Shader module",
+        .nextInChain = reinterpret_cast<WGPUChainedStruct *>(&shaderModuleWgslDescriptor),
+        .label = "Shader module",
     };
     WGPUShaderModule shaderModule = wgpuDeviceCreateShaderModule(device, &shaderModuleDescriptor);
 

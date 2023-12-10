@@ -11,7 +11,7 @@ Scene SceneSerde::deserialize(const std::string &input) {
     for (size_t entityIndex = 0; entityIndex < entitiesNode.size(); entityIndex++) {
         auto entityNode = entitiesNode[entityIndex];
 
-        auto& entity = scene.create();
+        auto &entity = scene.create();
 
         deserializeEntity(entityNode, entity);
     }
@@ -27,7 +27,7 @@ std::string SceneSerde::serialize(const Scene &scene) {
     emitter << YAML::Key << "entities";
     emitter << YAML::BeginSeq;
 
-    for (const auto& entity : scene.entities()) {
+    for (const auto &entity : scene.entities()) {
         serializeEntity(emitter, entity);
     }
 
@@ -96,12 +96,12 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
             auto restitutionThreshold = rigidbodyNode["restitution-threshold"].as<float>();
 
             Rigidbody rigidbody = {};
-            rigidbody.bodyType = bodyType,
-            rigidbody.hasFixedRotation = hasFixedRotation,
-            rigidbody.density = density,
-            rigidbody.friction = friction,
-            rigidbody.restitution = restitution,
-            rigidbody.restitutionThreshold = restitutionThreshold,
+            rigidbody.bodyType = bodyType;
+            rigidbody.hasFixedRotation = hasFixedRotation;
+            rigidbody.density = density;
+            rigidbody.friction = friction;
+            rigidbody.restitution = restitution;
+            rigidbody.restitutionThreshold = restitutionThreshold;
 
             entity.addComponent<Rigidbody>(rigidbody);
         }
@@ -123,7 +123,7 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
 
     if (childrenNode) {
         for (size_t childIndex = 0; childIndex < childrenNode.size(); childIndex++) {
-            auto& childEntity = entity.createChild();
+            auto &childEntity = entity.createChild();
             auto childNode = childrenNode[childIndex];
 
             deserializeEntity(childNode, childEntity);
@@ -135,12 +135,13 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
     emitter << YAML::BeginMap;
 
     // TODO: Implement some kind of component registry with metadata, so it doesn't have to be done manually
-    if (entity.hasComponent<Transform>() || entity.hasComponent<Sprite>() || entity.hasComponent<Rigidbody>() || entity.hasComponent<BoxCollider>()) {
+    if (entity.hasComponent<Transform>() || entity.hasComponent<Sprite>() || entity.hasComponent<Rigidbody>() ||
+        entity.hasComponent<BoxCollider>()) {
         emitter << YAML::Key << "components";
         emitter << YAML::BeginMap;
 
         if (entity.hasComponent<Transform>()) {
-            const auto& transform = entity.getComponent<Transform>();
+            const auto &transform = entity.getComponent<Transform>();
 
             emitter << YAML::Key << "transform";
             emitter << YAML::BeginMap;
@@ -174,7 +175,7 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
         }
 
         if (entity.hasComponent<Sprite>()) {
-            const auto& sprite = entity.getComponent<Sprite>();
+            const auto &sprite = entity.getComponent<Sprite>();
 
             emitter << YAML::Key << "sprite";
             emitter << YAML::BeginMap;
@@ -186,7 +187,7 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
         }
 
         if (entity.hasComponent<Rigidbody>()) {
-            const auto& rigidbody = entity.getComponent<Rigidbody>();
+            const auto &rigidbody = entity.getComponent<Rigidbody>();
 
             emitter << YAML::Key << "rigidbody";
             emitter << YAML::BeginMap;
@@ -228,7 +229,7 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
         }
 
         if (entity.hasComponent<BoxCollider>()) {
-            const auto& collider = entity.getComponent<BoxCollider>();
+            const auto &collider = entity.getComponent<BoxCollider>();
 
             emitter << YAML::Key << "box-collider";
             emitter << YAML::BeginMap;
@@ -264,7 +265,7 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
     emitter << YAML::Key << "children";
     emitter << YAML::BeginSeq;
 
-    for (const auto& child : entity.children()) {
+    for (const auto &child : entity.children()) {
         serializeEntity(emitter, child);
     }
 

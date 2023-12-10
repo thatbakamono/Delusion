@@ -1,9 +1,7 @@
 #include "delusion/graphics/GraphicsBackend.hpp"
 
 GraphicsBackend::GraphicsBackend() {
-    WGPUInstanceDescriptor descriptor = {
-            .nextInChain = nullptr
-    };
+    WGPUInstanceDescriptor descriptor = { .nextInChain = nullptr };
 
     m_instance = wgpuCreateInstance(&descriptor);
 }
@@ -34,20 +32,21 @@ void GraphicsBackend::setup(const Window &window) {
     m_surface = glfwGetWGPUSurface(m_instance, window.inner());
 
     WGPURequestAdapterOptions adapterOptions = {
-            .nextInChain = nullptr,
-            .compatibleSurface = m_surface,
+        .nextInChain = nullptr,
+        .compatibleSurface = m_surface,
     };
 
     m_adapter = requestAdapter(m_instance, &adapterOptions);
 
     WGPUDeviceDescriptor deviceDescriptor = {
-            .nextInChain = nullptr,
-            .label = "Device",
-            .requiredFeatureCount = 0,
-            .requiredLimits = nullptr,
-            .defaultQueue = WGPUQueueDescriptor{
-                    .nextInChain = nullptr,
-                    .label = "Queue",
+        .nextInChain = nullptr,
+        .label = "Device",
+        .requiredFeatureCount = 0,
+        .requiredLimits = nullptr,
+        .defaultQueue =
+            WGPUQueueDescriptor {
+                .nextInChain = nullptr,
+                .label = "Queue",
             },
     };
 
@@ -55,7 +54,8 @@ void GraphicsBackend::setup(const Window &window) {
 
     auto onDeviceError = [](WGPUErrorType type, char const *message, void *) {
         std::cout << "Uncaptured m_device error: type " << type;
-        if (message) std::cout << " (" << message << ")";
+        if (message)
+            std::cout << " (" << message << ")";
         std::cout << std::endl;
     };
     wgpuDeviceSetUncapturedErrorCallback(m_device, onDeviceError, nullptr);
@@ -77,16 +77,16 @@ void GraphicsBackend::setup(const Window &window) {
 
 void GraphicsBackend::configureSurface(uint32_t width, uint32_t height) {
     WGPUSurfaceConfiguration surfaceConfiguration = {
-            .nextInChain = nullptr,
-            .device = m_device,
-            .format = m_surfaceCapabilities.formats[0],
-            .usage = WGPUTextureUsage_RenderAttachment,
-            .viewFormatCount = 0,
-            .viewFormats = nullptr,
-            .alphaMode = m_surfaceCapabilities.alphaModes[0],
-            .width = width,
-            .height = height,
-            .presentMode = WGPUPresentMode_Fifo,
+        .nextInChain = nullptr,
+        .device = m_device,
+        .format = m_surfaceCapabilities.formats[0],
+        .usage = WGPUTextureUsage_RenderAttachment,
+        .viewFormatCount = 0,
+        .viewFormats = nullptr,
+        .alphaMode = m_surfaceCapabilities.alphaModes[0],
+        .width = width,
+        .height = height,
+        .presentMode = WGPUPresentMode_Fifo,
     };
 
     wgpuSurfaceConfigure(m_surface, &surfaceConfiguration);
@@ -94,8 +94,8 @@ void GraphicsBackend::configureSurface(uint32_t width, uint32_t height) {
 
 WGPUAdapter GraphicsBackend::requestAdapter(WGPUInstance instance, const WGPURequestAdapterOptions *options) {
     struct UserData {
-        WGPUAdapter adapter = nullptr;
-        bool requestEnded = false;
+            WGPUAdapter adapter = nullptr;
+            bool requestEnded = false;
     };
     UserData userData;
 
@@ -110,12 +110,7 @@ WGPUAdapter GraphicsBackend::requestAdapter(WGPUInstance instance, const WGPUReq
         userData.requestEnded = true;
     };
 
-    wgpuInstanceRequestAdapter(
-            instance,
-            options,
-            onAdapterRequestEnded,
-            &userData
-    );
+    wgpuInstanceRequestAdapter(instance, options, onAdapterRequestEnded, &userData);
 
     assert(userData.requestEnded);
 
@@ -124,8 +119,8 @@ WGPUAdapter GraphicsBackend::requestAdapter(WGPUInstance instance, const WGPUReq
 
 WGPUDevice GraphicsBackend::requestDevice(WGPUAdapter adapter, const WGPUDeviceDescriptor *descriptor) {
     struct UserData {
-        WGPUDevice device = nullptr;
-        bool requestEnded = false;
+            WGPUDevice device = nullptr;
+            bool requestEnded = false;
     };
     UserData userData;
 
@@ -140,12 +135,7 @@ WGPUDevice GraphicsBackend::requestDevice(WGPUAdapter adapter, const WGPUDeviceD
         userData.requestEnded = true;
     };
 
-    wgpuAdapterRequestDevice(
-            adapter,
-            descriptor,
-            onDeviceRequestEnded,
-            &userData
-    );
+    wgpuAdapterRequestDevice(adapter, descriptor, onDeviceRequestEnded, &userData);
 
     assert(userData.requestEnded);
 

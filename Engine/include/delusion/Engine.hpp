@@ -6,20 +6,20 @@
 #include <glfw/glfw3.h>
 
 class Engine {
-public:
-    Engine() {
-        if (glfwInit() != GLFW_TRUE) {
-            throw std::exception("GLFW initialization failed");
+    public:
+        Engine() {
+            if (glfwInit() != GLFW_TRUE) {
+                throw std::exception("GLFW initialization failed");
+            }
+
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         }
 
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    }
+        ~Engine() {
+            glfwTerminate();
+        }
 
-    ~Engine() {
-        glfwTerminate();
-    }
-
-    void pollEvents() {
-        glfwPollEvents();
-    }
+        void pollEvents() {
+            glfwPollEvents();
+        }
 };

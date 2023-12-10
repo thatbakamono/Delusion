@@ -1,6 +1,6 @@
 #pragma once
 
-template<typename T>
+template <typename T>
 T max(T left, T right) {
     if (left > right) {
         return left;
@@ -9,7 +9,7 @@ T max(T left, T right) {
     }
 }
 
-template<typename T>
+template <typename T>
 T min(T left, T right) {
     if (left < right) {
         return left;

@@ -10,15 +10,15 @@
 #include <nfd.hpp>
 
 #include "delusion/Components.hpp"
+#include "delusion/io/FileUtilities.hpp"
 #include "delusion/SceneSerde.hpp"
 #include "delusion/Utilities.hpp"
-#include "delusion/io/FileUtilities.hpp"
 
-void Editor::update(std::shared_ptr<Texture2D>& viewportTexture, float deltaTime) {
+void Editor::update(std::shared_ptr<Texture2D> &viewportTexture, float deltaTime) {
     if (!m_project.has_value()) {
         onProjectPanel();
     } else {
-        auto& project = m_project.value();
+        auto &project = m_project.value();
 
         if (isPlaying && m_scene.has_value()) {
             m_scene->onUpdate(deltaTime);
@@ -52,9 +52,10 @@ void Editor::onProjectPanel() {
 
             m_currentDirectory = m_project->assetsDirectoryPath();
 
-            m_fileWatch = std::make_unique<filewatch::FileWatch<std::string>>(m_project->assetsDirectoryPath().string(), [&](const std::string &path, const filewatch::Event event) {
-                onFileSystemChange(path, event);
-            });
+            m_fileWatch = std::make_unique<filewatch::FileWatch<std::string>>(
+                m_project->assetsDirectoryPath().string(),
+                [&](const std::string &path, const filewatch::Event event) { onFileSystemChange(path, event); }
+            );
         }
     }
 
@@ -74,16 +75,17 @@ void Editor::onProjectPanel() {
             m_assetManager->generateMetadataForAllFiles(m_project->assetsDirectoryPath());
             m_assetManager->loadMappings(m_project->assetsDirectoryPath());
 
-            m_fileWatch = std::make_unique<filewatch::FileWatch<std::string>>(m_project->assetsDirectoryPath().string(), [&](const std::string &path, const filewatch::Event event) {
-                onFileSystemChange(path, event);
-            });
+            m_fileWatch = std::make_unique<filewatch::FileWatch<std::string>>(
+                m_project->assetsDirectoryPath().string(),
+                [&](const std::string &path, const filewatch::Event event) { onFileSystemChange(path, event); }
+            );
         }
     }
 
     ImGui::End();
 }
 
-void Editor::onMenuBar(Project& project) {
+void Editor::onMenuBar(Project &project) {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("Scene")) {
             if (ImGui::MenuItem("Save", nullptr, false, m_scene.has_value())) {
@@ -112,7 +114,7 @@ void Editor::onHierarchyPanel() {
     ImGui::Begin("Hierarchy");
 
     if (m_scene.has_value()) {
-        auto& currentScene = m_scene.value();
+        auto &currentScene = m_scene.value();
 
         if (ImGui::BeginPopupContextWindow("hierarchy_context_menu", 1)) {
             if (ImGui::MenuItem("Create entity")) {
@@ -122,12 +124,12 @@ void Editor::onHierarchyPanel() {
             ImGui::EndPopup();
         }
 
-        auto& entities = currentScene.entities();
+        auto &entities = currentScene.entities();
 
         std::optional<size_t> entityToDestroyIndex = {};
 
         for (size_t i = 0; i < entities.size(); i++) {
-            auto& entity = entities[i];
+            auto &entity = entities[i];
 
             auto destroy = entityHierarchy(entity);
 
@@ -152,7 +154,7 @@ void Editor::onHierarchyPanel() {
     ImGui::End();
 }
 
-void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture, float deltaTime) {
+void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float deltaTime) {
     ImGui::Begin("Viewport");
 
     auto icon = isPlaying ? m_stopIconTexture : m_playIconTexture;
@@ -177,7 +179,8 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture, float 
     auto availableHeight = static_cast<uint32_t>(availableSpace.y);
 
     if (viewportTexture->width() != availableWidth || viewportTexture->height() != availableHeight) {
-        std::shared_ptr<Texture2D> newTexture = Texture2D::create(viewportTexture->id(), m_device, availableWidth, availableHeight, true);
+        std::shared_ptr<Texture2D> newTexture =
+            Texture2D::create(viewportTexture->id(), m_device, availableWidth, availableHeight, true);
 
         viewportTexture.swap(newTexture);
     }
@@ -189,8 +192,9 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture, float 
     if (ImGui::IsWindowFocused()) {
         auto dragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Middle);
 
-        glm::vec2 movement = glm::vec2(dragDelta.x * m_camera.aspectRatio() / availableSpace.x, dragDelta.y / availableSpace.y)
-                * glm::vec2(-1.0f, 1.0f) * m_camera.zoom() * deltaTime * 125.0f;
+        glm::vec2 movement =
+            glm::vec2(dragDelta.x * m_camera.aspectRatio() / availableSpace.x, dragDelta.y / availableSpace.y) *
+            glm::vec2(-1.0f, 1.0f) * m_camera.zoom() * deltaTime * 125.0f;
 
         m_camera.setPosition(m_camera.position() + glm::vec3(movement, 0.0f));
 
@@ -209,7 +213,7 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture, float 
         auto payload = ImGui::AcceptDragDropPayload("scene");
 
         if (payload != nullptr) {
-            auto source = readAsString(static_cast<char*>(payload->Data));
+            auto source = readAsString(static_cast<char *>(payload->Data));
 
             if (source.has_value()) {
                 m_selectedEntity = nullptr;
@@ -223,7 +227,7 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D>& viewportTexture, float 
     ImGui::End();
 }
 
-void Editor::onAssetBrowserPanel(Project& project) {
+void Editor::onAssetBrowserPanel(Project &project) {
     ImGui::Begin("Asset browser");
 
     if (m_currentDirectory != project.assetsDirectoryPath()) {
@@ -245,8 +249,8 @@ void Editor::onAssetBrowserPanel(Project& project) {
 
     ImGui::Columns(columnCount, nullptr, false);
 
-    for (const auto& entry : std::filesystem::directory_iterator(m_currentDirectory)) {
-        const auto& path = entry.path();
+    for (const auto &entry : std::filesystem::directory_iterator(m_currentDirectory)) {
+        const auto &path = entry.path();
 
         auto extension = path.filename().extension();
         auto extensionText = extension.string();
@@ -312,7 +316,7 @@ void Editor::onPropertiesPanel() {
         auto hasTransform = m_selectedEntity->hasComponent<Transform>();
 
         if (hasTransform) {
-            auto& transform = m_selectedEntity->getComponent<Transform>();
+            auto &transform = m_selectedEntity->getComponent<Transform>();
 
             if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginPopupContextItem(nullptr)) {
@@ -332,7 +336,7 @@ void Editor::onPropertiesPanel() {
         auto hasSprite = m_selectedEntity->hasComponent<Sprite>();
 
         if (hasSprite) {
-            auto& sprite = m_selectedEntity->getComponent<Sprite>();
+            auto &sprite = m_selectedEntity->getComponent<Sprite>();
 
             if (ImGui::CollapsingHeader("Sprite", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginPopupContextItem(nullptr)) {
@@ -353,7 +357,7 @@ void Editor::onPropertiesPanel() {
                     auto payload = ImGui::AcceptDragDropPayload("image");
 
                     if (payload != nullptr) {
-                        auto path = std::filesystem::path(static_cast<char*>(payload->Data));
+                        auto path = std::filesystem::path(static_cast<char *>(payload->Data));
 
                         if (!m_assetManager->isLoaded(path)) {
                             m_assetManager->loadAsset(path);
@@ -373,12 +377,12 @@ void Editor::onPropertiesPanel() {
 
         if (hasRigidbody) {
             if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen)) {
-                auto& rigidbody = m_selectedEntity->getComponent<Rigidbody>();
+                auto &rigidbody = m_selectedEntity->getComponent<Rigidbody>();
 
-                const char* types[] = {
-                        "static",
-                        "dynamic",
-                        "kinematic",
+                const char *types[] = {
+                    "static",
+                    "dynamic",
+                    "kinematic",
                 };
 
                 int currentItem {};
@@ -430,7 +434,7 @@ void Editor::onPropertiesPanel() {
 
         if (hasBoxCollider) {
             if (ImGui::CollapsingHeader("Box collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-                auto& collider = m_selectedEntity->getComponent<BoxCollider>();
+                auto &collider = m_selectedEntity->getComponent<BoxCollider>();
 
                 ImGui::DragFloat2("Size", glm::value_ptr(collider.size), 0.1f, 0.0f, 0.0f, "%.5f");
                 ImGui::DragFloat2("Offset", glm::value_ptr(collider.offset), 0.1f, 0.0f, 0.0f, "%.5f");
@@ -504,12 +508,12 @@ bool Editor::entityHierarchy(Entity &entity) {
     }
 
     if (isOpen) {
-        auto& children = entity.children();
+        auto &children = entity.children();
 
         std::optional<size_t> entityToDestroyIndex = {};
 
         for (size_t i = 0; i < children.size(); i++) {
-            auto& child = children[i];
+            auto &child = children[i];
 
             auto destroyChild = entityHierarchy(child);
 
@@ -535,8 +539,7 @@ bool Editor::entityHierarchy(Entity &entity) {
 void Editor::onFileSystemChange(const std::string &relativePath, const filewatch::Event event) {
     std::filesystem::path path = m_project->assetsDirectoryPath() / relativePath;
 
-    switch (event)
-    {
+    switch (event) {
         case filewatch::Event::added:
             m_assetManager->generateMetadataForFile(path);
             m_assetManager->loadMapping(path);

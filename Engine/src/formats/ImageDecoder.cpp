@@ -3,7 +3,7 @@
 #include <cimage.h>
 
 Image ImageDecoder::decode(const std::string &path) {
-    cimage_image* image = cimage_image_decode_from_file(path.c_str());
+    cimage_image *image = cimage_image_decode_from_file(path.c_str());
 
     uint32_t width = image->width;
     uint32_t height = image->height;

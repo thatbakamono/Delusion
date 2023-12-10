@@ -3,5 +3,5 @@
 #include "delusion/UniqueId.hpp"
 
 struct Metadata {
-    UniqueId id;
+        UniqueId id;
 };

@@ -7,7 +7,7 @@ Scene::Scene(Scene &&other) noexcept {
 
     m_registry = std::move(other.m_registry);
 
-    for (auto& entity : m_entities) {
+    for (auto &entity : m_entities) {
         updateRegistry(entity, &m_registry);
     }
 
@@ -19,7 +19,7 @@ Scene &Scene::operator=(Scene &&other) noexcept {
 
     m_registry = std::move(other.m_registry);
 
-    for (auto& entity : m_entities) {
+    for (auto &entity : m_entities) {
         updateRegistry(entity, &m_registry);
     }
 
@@ -59,9 +59,9 @@ void Scene::start() {
         bodyDefinition.position.Set(transform.position.x, transform.position.y);
         bodyDefinition.angle = transform.rotation;
 
-        b2Body* body = m_physicsWorld->CreateBody(&bodyDefinition);
+        b2Body *body = m_physicsWorld->CreateBody(&bodyDefinition);
 
-        rigidbody.body = static_cast<void*>(body);
+        rigidbody.body = static_cast<void *>(body);
 
         b2FixtureDef fixtureDefinition {};
         fixtureDefinition.density = rigidbody.density;
@@ -69,7 +69,7 @@ void Scene::start() {
         fixtureDefinition.restitution = rigidbody.restitution;
         fixtureDefinition.restitutionThreshold = rigidbody.restitutionThreshold;
 
-        b2Fixture* fixture;
+        b2Fixture *fixture;
 
         if (m_registry.any_of<BoxCollider>(entity)) {
             auto &collider = m_registry.get<BoxCollider>(entity);
@@ -84,7 +84,7 @@ void Scene::start() {
             fixture = body->CreateFixture(&fixtureDefinition);
         }
 
-        rigidbody.fixture = static_cast<void*>(fixture);
+        rigidbody.fixture = static_cast<void *>(fixture);
     }
 }
 
@@ -102,14 +102,14 @@ void Scene::onUpdate(float deltaTime) {
 
     m_physicsWorld->Step(deltaTime, velocityIterations, positionIterations);
 
-    auto view =  m_registry.view<Transform, Rigidbody>();
+    auto view = m_registry.view<Transform, Rigidbody>();
 
     for (auto entity : view) {
         auto [transform, rigidbody] = view.get<Transform, Rigidbody>(entity);
 
-        b2Body* body = static_cast<b2Body*>(rigidbody.body);
+        b2Body *body = static_cast<b2Body *>(rigidbody.body);
 
-        const auto& position = body->GetPosition();
+        const auto &position = body->GetPosition();
 
         transform.position.x = position.x;
         transform.position.y = position.y;
@@ -136,7 +136,7 @@ void Scene::remove(Entity &entity) {
 void Scene::updateRegistry(Entity &entity, entt::registry *registry) {
     entity.m_registry = &m_registry;
 
-    for (auto& child : entity.children()) {
+    for (auto &child : entity.children()) {
         child.m_registry = &m_registry;
 
         updateRegistry(child, registry);

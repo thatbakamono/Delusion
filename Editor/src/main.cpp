@@ -1,16 +1,16 @@
 #include <memory>
 
-#include <webgpu.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_wgpu.h>
 #include <nfd.hpp>
+#include <webgpu.h>
 
 #include <delusion/Engine.hpp>
-#include <delusion/Window.hpp>
 #include <delusion/formats/ImageDecoder.hpp>
 #include <delusion/graphics/GraphicsBackend.hpp>
 #include <delusion/graphics/Renderer.hpp>
+#include <delusion/Window.hpp>
 
 #include "Editor.hpp"
 
@@ -34,7 +34,8 @@ int main() {
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    std::shared_ptr<Texture2D> viewportTexture = Texture2D::create(UniqueId(), backend.device(), defaultWindowWidth, defaultWindowHeight, true);
+    std::shared_ptr<Texture2D> viewportTexture =
+        Texture2D::create(UniqueId(), backend.device(), defaultWindowWidth, defaultWindowHeight, true);
 
     ImGui_ImplGlfw_InitForOther(window.inner(), true);
     ImGui_ImplWGPU_Init(backend.device(), 3, backend.preferredFormat(), WGPUTextureFormat_Undefined);
@@ -45,15 +46,23 @@ int main() {
     auto directoryIconImage = ImageDecoder::decode("directory.png");
     auto playIconImage = ImageDecoder::decode("play.png");
     auto stopIconImage = ImageDecoder::decode("stop.png");
-    std::shared_ptr<Texture2D> fileIconTexture = Texture2D::create(UniqueId(), backend.device(), backend.queue(), fileIconImage);
-    std::shared_ptr<Texture2D> directoryIconTexture = Texture2D::create(UniqueId(), backend.device(), backend.queue(), directoryIconImage);
-    std::shared_ptr<Texture2D> playIconTexture = Texture2D::create(UniqueId(), backend.device(), backend.queue(), playIconImage);
-    std::shared_ptr<Texture2D> stopIconTexture = Texture2D::create(UniqueId(), backend.device(), backend.queue(), stopIconImage);
+    std::shared_ptr<Texture2D> fileIconTexture =
+        Texture2D::create(UniqueId(), backend.device(), backend.queue(), fileIconImage);
+    std::shared_ptr<Texture2D> directoryIconTexture =
+        Texture2D::create(UniqueId(), backend.device(), backend.queue(), directoryIconImage);
+    std::shared_ptr<Texture2D> playIconTexture =
+        Texture2D::create(UniqueId(), backend.device(), backend.queue(), playIconImage);
+    std::shared_ptr<Texture2D> stopIconTexture =
+        Texture2D::create(UniqueId(), backend.device(), backend.queue(), stopIconImage);
 
     Image emptyImage(1, 1, { 0, 0, 0, 0 });
-    std::shared_ptr<Texture2D> emptyTexture = Texture2D::create(UniqueId(), backend.device(), backend.queue(), emptyImage);
+    std::shared_ptr<Texture2D> emptyTexture =
+        Texture2D::create(UniqueId(), backend.device(), backend.queue(), emptyImage);
 
-    Editor editor(backend.device(), backend.queue(), emptyTexture, fileIconTexture, directoryIconTexture, playIconTexture, stopIconTexture);
+    Editor editor(
+        backend.device(), backend.queue(), emptyTexture, fileIconTexture, directoryIconTexture, playIconTexture,
+        stopIconTexture
+    );
 
     int previousWidth = defaultWindowWidth;
     int previousHeight = defaultWindowHeight;
@@ -82,13 +91,13 @@ int main() {
         }
 
         WGPUCommandEncoderDescriptor encoderDescriptor = {
-                .nextInChain = nullptr,
-                .label = "Command encoder",
+            .nextInChain = nullptr,
+            .label = "Command encoder",
         };
         WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(backend.device(), &encoderDescriptor);
 
         {
-            auto& scene = editor.scene();
+            auto &scene = editor.scene();
 
             if (scene.has_value()) {
                 renderer.renderScene(commandEncoder, viewportTexture->view(), editor.camera(), scene.value());
@@ -117,29 +126,29 @@ int main() {
         auto textureView = wgpuTextureCreateView(surfaceTexture.texture, nullptr);
 
         WGPURenderPassColorAttachment renderPassColorAttachment = {
-                .view = textureView,
-                .resolveTarget = nullptr,
-                .loadOp = WGPULoadOp_Clear,
-                .storeOp = WGPUStoreOp_Store,
-                .clearValue = WGPUColor{0.3, 0.3, 0.3, 1.0},
+            .view = textureView,
+            .resolveTarget = nullptr,
+            .loadOp = WGPULoadOp_Clear,
+            .storeOp = WGPUStoreOp_Store,
+            .clearValue = WGPUColor { 0.3, 0.3, 0.3, 1.0 },
         };
         WGPURenderPassDescriptor renderPassDescriptor = {
-                .nextInChain = nullptr,
-                .colorAttachmentCount = 1,
-                .colorAttachments = &renderPassColorAttachment,
-                .depthStencilAttachment = nullptr,
-                .timestampWrites = nullptr,
+            .nextInChain = nullptr,
+            .colorAttachmentCount = 1,
+            .colorAttachments = &renderPassColorAttachment,
+            .depthStencilAttachment = nullptr,
+            .timestampWrites = nullptr,
         };
-        WGPURenderPassEncoder renderPassEncoder = wgpuCommandEncoderBeginRenderPass(commandEncoder,
-                                                                                    &renderPassDescriptor);
+        WGPURenderPassEncoder renderPassEncoder =
+            wgpuCommandEncoderBeginRenderPass(commandEncoder, &renderPassDescriptor);
 
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), renderPassEncoder);
 
         wgpuRenderPassEncoderEnd(renderPassEncoder);
 
         WGPUCommandBufferDescriptor commandBufferDescriptor = {
-                .nextInChain = nullptr,
-                .label = "Command buffer",
+            .nextInChain = nullptr,
+            .label = "Command buffer",
         };
         WGPUCommandBuffer commandBuffer = wgpuCommandEncoderFinish(commandEncoder, &commandBufferDescriptor);
 
@@ -155,7 +164,7 @@ int main() {
 
     ImGui_ImplWGPU_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    
+
     ImGui::DestroyContext();
 
     NFD_Quit();

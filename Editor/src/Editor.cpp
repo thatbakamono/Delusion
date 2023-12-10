@@ -118,7 +118,23 @@ void Editor::onHierarchyPanel() {
 
         if (ImGui::BeginPopupContextWindow("hierarchy_context_menu", 1)) {
             if (ImGui::MenuItem("Create entity")) {
+                auto &entities = currentScene.entities();
+
+                std::optional<size_t> selectedEntityIndex = std::nullopt;
+
+                if (m_selectedEntity != nullptr) {
+                    for (size_t i = 0; i < entities.size(); i++) {
+                        if (*m_selectedEntity == entities[i]) {
+                            selectedEntityIndex = std::make_optional(i);
+                        }
+                    }
+                }
+
                 currentScene.create();
+
+                if (selectedEntityIndex.has_value()) {
+                    m_selectedEntity = &entities[selectedEntityIndex.value()];
+                }
             }
 
             ImGui::EndPopup();
@@ -497,7 +513,23 @@ bool Editor::entityHierarchy(Entity &entity) {
 
     if (ImGui::BeginPopupContextItem()) {
         if (ImGui::MenuItem("Create entity")) {
+            auto &children = entity.children();
+
+            std::optional<size_t> selectedEntityIndex = std::nullopt;
+
+            if (m_selectedEntity != nullptr) {
+                for (size_t i = 0; i < children.size(); i++) {
+                    if (*m_selectedEntity == children[i]) {
+                        selectedEntityIndex = std::make_optional(i);
+                    }
+                }
+            }
+
             entity.createChild();
+
+            if (selectedEntityIndex.has_value()) {
+                m_selectedEntity = &children[selectedEntityIndex.value()];
+            }
         }
 
         if (ImGui::MenuItem("Delete entity")) {

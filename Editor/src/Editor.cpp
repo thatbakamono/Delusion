@@ -233,6 +233,13 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float 
 
             if (source.has_value()) {
                 m_selectedEntity = nullptr;
+
+                if (m_scene.has_value()) {
+                    m_scene->stop();
+
+                    isPlaying = false;
+                }
+
                 m_scene = std::make_optional(m_sceneSerde.deserialize(source.value()));
             }
         }

@@ -77,7 +77,7 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
         if (rigidbodyNode) {
             auto bodyTypeText = rigidbodyNode["body-type"].as<std::string>();
 
-            Rigidbody::BodyType bodyType;
+            Rigidbody::BodyType bodyType {};
 
             if (bodyTypeText == "static") {
                 bodyType = Rigidbody::BodyType::Static;

@@ -36,7 +36,7 @@ void Scene::start() {
     for (auto entity : view) {
         auto [transform, rigidbody] = view.get<Transform, Rigidbody>(entity);
 
-        b2BodyType bodyType;
+        b2BodyType bodyType {};
 
         switch (rigidbody.bodyType) {
             case Rigidbody::BodyType::Static:
@@ -49,6 +49,10 @@ void Scene::start() {
                 break;
             case Rigidbody::BodyType::Kinematic:
                 bodyType = b2BodyType::b2_kinematicBody;
+
+                break;
+            default:
+                assert(false);
 
                 break;
         }

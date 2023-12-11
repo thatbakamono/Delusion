@@ -20,8 +20,8 @@ void Editor::update(std::shared_ptr<Texture2D> &viewportTexture, float deltaTime
     } else {
         auto &project = m_project.value();
 
-        if (isPlaying && m_scene.has_value()) {
-            m_scene->onUpdate(deltaTime);
+        if (isPlaying) {
+            m_activeScene->onUpdate(deltaTime);
         }
 
         onMenuBar(project);
@@ -88,7 +88,7 @@ void Editor::onProjectPanel() {
 void Editor::onMenuBar(Project &project) {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("Scene")) {
-            if (ImGui::MenuItem("Save", nullptr, false, m_scene.has_value())) {
+            if (ImGui::MenuItem("Save", nullptr, false, m_scene != nullptr)) {
                 // TODO: Support for non-ascii characters
                 NFD::UniquePath path;
 
@@ -99,7 +99,7 @@ void Editor::onMenuBar(Project &project) {
                 if (NFD::SaveDialog(path, &filterItem, 1, assetsDirectoryString.c_str()) == NFD_OKAY) {
                     std::ofstream stream(path.get());
 
-                    stream << m_sceneSerde.serialize(m_scene.value());
+                    stream << m_sceneSerde.serialize(*m_scene);
                 }
             }
 
@@ -113,12 +113,12 @@ void Editor::onMenuBar(Project &project) {
 void Editor::onHierarchyPanel() {
     ImGui::Begin("Hierarchy");
 
-    if (m_scene.has_value()) {
-        auto &currentScene = m_scene.value();
+    if (m_activeScene != nullptr) {
+        auto *scene = m_activeScene.get();
 
         if (ImGui::BeginPopupContextWindow("hierarchy_context_menu", 1)) {
             if (ImGui::MenuItem("Create entity")) {
-                auto &entities = currentScene.entities();
+                auto &entities = scene->entities();
 
                 std::optional<size_t> selectedEntityIndex = std::nullopt;
 
@@ -130,7 +130,7 @@ void Editor::onHierarchyPanel() {
                     }
                 }
 
-                currentScene.create();
+                scene->create();
 
                 if (selectedEntityIndex.has_value()) {
                     m_selectedEntity = &entities[selectedEntityIndex.value()];
@@ -140,7 +140,7 @@ void Editor::onHierarchyPanel() {
             ImGui::EndPopup();
         }
 
-        auto &entities = currentScene.entities();
+        auto &entities = scene->entities();
 
         std::optional<size_t> entityToDestroyIndex = {};
 
@@ -159,7 +159,7 @@ void Editor::onHierarchyPanel() {
                 m_selectedEntity = nullptr;
             }
 
-            currentScene.remove(entities[entityToDestroyIndex.value()]);
+            scene->remove(entities[entityToDestroyIndex.value()]);
         }
 
         if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(0)) {
@@ -176,15 +176,37 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float 
     auto icon = isPlaying ? m_stopIconTexture : m_playIconTexture;
 
     if (ImGui::ImageButton(icon->view(), { 32.0f, 32.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f })) {
-        if (m_scene.has_value()) {
-            isPlaying = !isPlaying;
+        auto selectedEntityId = m_selectedEntity != nullptr ? std::make_optional(m_selectedEntity->id()) : std::nullopt;
 
-            if (isPlaying) {
-                m_scene->start();
-            } else {
-                m_scene->stop();
+        if (!isPlaying) {
+            m_activeScene = std::make_shared<Scene>(Scene::copy(*m_scene));
+            m_activeScene->start();
+
+            if (selectedEntityId.has_value()) {
+                auto entity = m_activeScene->getById(selectedEntityId.value());
+
+                if (entity.has_value()) {
+                    m_selectedEntity = entity.value();
+                } else {
+                    m_selectedEntity = nullptr;
+                }
+            }
+        } else {
+            m_activeScene->stop();
+            m_activeScene = m_scene;
+
+            if (selectedEntityId.has_value()) {
+                auto entity = m_activeScene->getById(selectedEntityId.value());
+
+                if (entity.has_value()) {
+                    m_selectedEntity = entity.value();
+                } else {
+                    m_selectedEntity = nullptr;
+                }
             }
         }
+
+        isPlaying = !isPlaying;
     }
 
     ImVec2 availableSpace = ImGui::GetContentRegionAvail();
@@ -234,13 +256,13 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float 
             if (source.has_value()) {
                 m_selectedEntity = nullptr;
 
-                if (m_scene.has_value()) {
+                if (m_activeScene != nullptr) {
                     m_scene->stop();
-
                     isPlaying = false;
                 }
 
-                m_scene = std::make_optional(m_sceneSerde.deserialize(source.value()));
+                m_scene = std::make_shared<Scene>(m_sceneSerde.deserialize(source.value()));
+                m_activeScene = m_scene;
             }
         }
 
@@ -509,7 +531,7 @@ void Editor::onPropertiesPanel() {
 }
 
 bool Editor::entityHierarchy(Entity &entity) {
-    auto id = std::to_string(entity.id());
+    auto id = std::to_string(entity.id().value());
 
     auto isOpen = ImGui::TreeNode(id.c_str(), "Entity");
     auto destroy = false;

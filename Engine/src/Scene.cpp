@@ -28,6 +28,18 @@ Scene &Scene::operator=(Scene &&other) noexcept {
     return *this;
 }
 
+Scene Scene::copy(Scene &source) {
+    Scene copiedScene;
+
+    for (auto &entity : source.entities()) {
+        auto &copiedEntity = copiedScene.create();
+
+        copyEntity(copiedEntity, entity);
+    }
+
+    return copiedScene;
+}
+
 void Scene::start() {
     m_physicsWorld = std::unique_ptr<b2World>(new b2World({ 0.0f, -10.0f }));
 
@@ -134,6 +146,74 @@ void Scene::remove(Entity &entity) {
 
     if (result != m_entities.end()) {
         m_entities.erase(result);
+    }
+}
+
+std::optional<Entity *> Scene::getById(UniqueId id) {
+    for (auto &entity : m_entities) {
+        if (entity.id() == id) {
+            return std::make_optional(&entity);
+        }
+    }
+
+    for (auto &entity : m_entities) {
+        auto result = getById(entity, id);
+
+        if (result.has_value()) {
+            return result;
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Entity *> Scene::getById(Entity &parent, UniqueId id) {
+    for (auto &child : parent.children()) {
+        if (child.id() == id) {
+            return std::make_optional(&child);
+        }
+    }
+
+    for (auto &child : parent.children()) {
+        auto result = getById(child, id);
+
+        if (result.has_value()) {
+            return result;
+        }
+    }
+
+    return std::nullopt;
+}
+
+void Scene::copyEntity(Entity &target, Entity &source) {
+    target.m_id = source.m_id;
+
+    if (source.hasComponent<Transform>()) {
+        auto &transform = source.getComponent<Transform>();
+
+        target.addComponent<Transform>(transform);
+    }
+
+    if (source.hasComponent<Sprite>()) {
+        auto &sprite = source.getComponent<Sprite>();
+
+        target.addComponent<Sprite>(sprite);
+    }
+
+    if (source.hasComponent<Rigidbody>()) {
+        auto &rigidbody = source.getComponent<Rigidbody>();
+
+        target.addComponent<Rigidbody>(rigidbody);
+    }
+
+    if (source.hasComponent<BoxCollider>()) {
+        auto &collider = source.getComponent<BoxCollider>();
+
+        target.addComponent<BoxCollider>(collider);
+    }
+
+    for (auto &child : source.children()) {
+        copyEntity(target.createChild(), child);
     }
 }
 

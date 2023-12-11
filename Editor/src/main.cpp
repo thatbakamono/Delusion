@@ -97,10 +97,10 @@ int main() {
         WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(backend.device(), &encoderDescriptor);
 
         {
-            auto &scene = editor.scene();
+            auto *scene = editor.activeScene();
 
-            if (scene.has_value()) {
-                renderer.renderScene(commandEncoder, viewportTexture->view(), editor.camera(), scene.value());
+            if (scene != nullptr) {
+                renderer.renderScene(commandEncoder, viewportTexture->view(), editor.camera(), *scene);
             }
         }
 

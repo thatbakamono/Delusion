@@ -8,6 +8,8 @@ class UniqueId {
     public:
         UniqueId() : m_value(Random::randomU64()) {}
 
+        UniqueId(const UniqueId &other) = default;
+
         explicit UniqueId(uint64_t value) : m_value(value) {}
 
         [[nodiscard]] bool operator==(const UniqueId &other) const {

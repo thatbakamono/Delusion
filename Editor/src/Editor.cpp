@@ -14,21 +14,25 @@
 #include "delusion/SceneSerde.hpp"
 #include "delusion/Utilities.hpp"
 
-void Editor::update(std::shared_ptr<Texture2D> &viewportTexture, float deltaTime) {
+void Editor::onEditorUpdate(std::shared_ptr<Texture2D> &viewportTexture, float deltaTime) {
     if (!m_project.has_value()) {
         onProjectPanel();
     } else {
         auto &project = m_project.value();
-
-        if (isPlaying) {
-            m_activeScene->onUpdate(deltaTime);
-        }
 
         onMenuBar(project);
         onHierarchyPanel();
         onViewportPanel(viewportTexture, deltaTime);
         onAssetBrowserPanel(project);
         onPropertiesPanel();
+    }
+}
+
+void Editor::onRuntimeUpdate(float deltaTime) {
+    if (m_project.has_value()) {
+        if (isPlaying) {
+            m_activeScene->onUpdate(deltaTime);
+        }
     }
 }
 
@@ -213,14 +217,16 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float 
 
     m_camera.setAspectRatio(availableSpace.x / availableSpace.y);
 
-    auto availableWidth = static_cast<uint32_t>(availableSpace.x);
-    auto availableHeight = static_cast<uint32_t>(availableSpace.y);
+    if (availableSpace.x > 0.0f && availableSpace.y > 0.0f) {
+        auto availableWidth = static_cast<uint32_t>(availableSpace.x);
+        auto availableHeight = static_cast<uint32_t>(availableSpace.y);
 
-    if (viewportTexture->width() != availableWidth || viewportTexture->height() != availableHeight) {
-        std::shared_ptr<Texture2D> newTexture =
-            Texture2D::create(viewportTexture->id(), m_device, availableWidth, availableHeight, true);
+        if (viewportTexture->width() != availableWidth || viewportTexture->height() != availableHeight) {
+            std::shared_ptr<Texture2D> newTexture =
+                Texture2D::create(viewportTexture->id(), m_device, availableWidth, availableHeight, true);
 
-        viewportTexture.swap(newTexture);
+            viewportTexture.swap(newTexture);
+        }
     }
 
     ImGui::Image(viewportTexture->view(), availableSpace);

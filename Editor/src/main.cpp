@@ -83,8 +83,19 @@ int main() {
 
         glfwGetWindowSize(window.inner(), &currentWidth, &currentHeight);
 
+        editor.onRuntimeUpdate(deltaTime);
+
+        WGPUSurfaceTexture surfaceTexture;
+        wgpuSurfaceGetCurrentTexture(backend.surface(), &surfaceTexture);
+
+        if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
+            continue;
+        }
+
         if (currentWidth != previousWidth || currentHeight != previousHeight) {
-            backend.configureSurface(static_cast<uint32_t>(currentWidth), static_cast<uint32_t>(currentHeight));
+            if (currentWidth > 0 && currentHeight > 0) {
+                backend.configureSurface(static_cast<uint32_t>(currentWidth), static_cast<uint32_t>(currentHeight));
+            }
 
             previousWidth = currentWidth;
             previousHeight = currentHeight;
@@ -111,16 +122,9 @@ int main() {
 
             ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-            editor.update(viewportTexture, deltaTime);
+            editor.onEditorUpdate(viewportTexture, deltaTime);
 
             ImGui::Render();
-        }
-
-        WGPUSurfaceTexture surfaceTexture;
-        wgpuSurfaceGetCurrentTexture(backend.surface(), &surfaceTexture);
-
-        if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
-            continue;
         }
 
         auto textureView = wgpuTextureCreateView(surfaceTexture.texture, nullptr);

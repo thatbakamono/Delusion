@@ -55,7 +55,8 @@ class Editor {
               m_playIconTexture(std::move(playIconTexture)), m_stopIconTexture(std::move(stopIconTexture)),
               m_assetManager(std::make_shared<AssetManager>(device, queue)), m_sceneSerde(m_assetManager) {}
 
-        void update(std::shared_ptr<Texture2D> &viewportTexture, float deltaTime);
+        void onEditorUpdate(std::shared_ptr<Texture2D> &viewportTexture, float deltaTime);
+        void onRuntimeUpdate(float deltaTime);
 
         [[nodiscard]] Scene *activeScene() {
             return m_activeScene.get();

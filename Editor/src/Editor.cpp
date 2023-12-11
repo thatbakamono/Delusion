@@ -430,6 +430,14 @@ void Editor::onPropertiesPanel() {
             if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen)) {
                 auto &rigidbody = m_selectedEntity->getComponent<Rigidbody>();
 
+                if (ImGui::BeginPopupContextItem(nullptr)) {
+                    if (ImGui::MenuItem("Remove component")) {
+                        m_selectedEntity->removeComponent<Rigidbody>();
+                    }
+
+                    ImGui::EndPopup();
+                }
+
                 const char *types[] = {
                     "static",
                     "dynamic",
@@ -486,6 +494,14 @@ void Editor::onPropertiesPanel() {
         if (hasBoxCollider) {
             if (ImGui::CollapsingHeader("Box collider", ImGuiTreeNodeFlags_DefaultOpen)) {
                 auto &collider = m_selectedEntity->getComponent<BoxCollider>();
+
+                if (ImGui::BeginPopupContextItem(nullptr)) {
+                    if (ImGui::MenuItem("Remove component")) {
+                        m_selectedEntity->removeComponent<BoxCollider>();
+                    }
+
+                    ImGui::EndPopup();
+                }
 
                 ImGui::DragFloat2("Size", glm::value_ptr(collider.size), 0.1f, 0.0f, 0.0f, "%.5f");
                 ImGui::DragFloat2("Offset", glm::value_ptr(collider.offset), 0.1f, 0.0f, 0.0f, "%.5f");

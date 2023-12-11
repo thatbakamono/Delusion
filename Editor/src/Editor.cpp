@@ -364,11 +364,7 @@ void Editor::onPropertiesPanel() {
     ImGui::Begin("Properties");
 
     if (m_selectedEntity != nullptr) {
-        auto hasTransform = m_selectedEntity->hasComponent<Transform>();
-
-        if (hasTransform) {
-            auto &transform = m_selectedEntity->getComponent<Transform>();
-
+        if (m_selectedEntity->hasComponent<Transform>()) {
             if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginPopupContextItem(nullptr)) {
                     if (ImGui::MenuItem("Remove component")) {
@@ -378,17 +374,17 @@ void Editor::onPropertiesPanel() {
                     ImGui::EndPopup();
                 }
 
-                ImGui::DragFloat2("Position", glm::value_ptr(transform.position), 0.1f, 0.0f, 0.0f, "%.5f");
-                ImGui::DragFloat("Rotation", &transform.rotation, 0.1f, 0.0f, 0.0f, "%.5f");
-                ImGui::DragFloat2("Scale", glm::value_ptr(transform.scale), 0.1f, 0.0f, 0.0f, "%.5f");
+                if (m_selectedEntity->hasComponent<Transform>()) {
+                    auto &transform = m_selectedEntity->getComponent<Transform>();
+
+                    ImGui::DragFloat2("Position", glm::value_ptr(transform.position), 0.1f, 0.0f, 0.0f, "%.5f");
+                    ImGui::DragFloat("Rotation", &transform.rotation, 0.1f, 0.0f, 0.0f, "%.5f");
+                    ImGui::DragFloat2("Scale", glm::value_ptr(transform.scale), 0.1f, 0.0f, 0.0f, "%.5f");
+                }
             }
         }
 
-        auto hasSprite = m_selectedEntity->hasComponent<Sprite>();
-
-        if (hasSprite) {
-            auto &sprite = m_selectedEntity->getComponent<Sprite>();
-
+        if (m_selectedEntity->hasComponent<Sprite>()) {
             if (ImGui::CollapsingHeader("Sprite", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginPopupContextItem(nullptr)) {
                     if (ImGui::MenuItem("Remove component")) {
@@ -398,38 +394,38 @@ void Editor::onPropertiesPanel() {
                     ImGui::EndPopup();
                 }
 
-                if (sprite.texture != nullptr) {
-                    ImGui::Image(sprite.texture->view(), ImVec2(128.0f, 128.0f), ImVec2(0, 1), ImVec2(1, 0));
-                } else {
-                    ImGui::Image(m_emptyTexture->view(), ImVec2(128.0f, 128.0f), ImVec2(0, 1), ImVec2(1, 0));
-                }
+                if (m_selectedEntity->hasComponent<Sprite>()) {
+                    auto &sprite = m_selectedEntity->getComponent<Sprite>();
 
-                if (ImGui::BeginDragDropTarget()) {
-                    auto payload = ImGui::AcceptDragDropPayload("image");
-
-                    if (payload != nullptr) {
-                        auto path = std::filesystem::path(static_cast<char *>(payload->Data));
-
-                        if (!m_assetManager->isLoaded(path)) {
-                            m_assetManager->loadAsset(path);
-                        }
-
-                        auto texture = m_assetManager->getTextureById(m_assetManager->getIdByPath(path));
-
-                        sprite.texture = texture;
+                    if (sprite.texture != nullptr) {
+                        ImGui::Image(sprite.texture->view(), ImVec2(128.0f, 128.0f), ImVec2(0, 1), ImVec2(1, 0));
+                    } else {
+                        ImGui::Image(m_emptyTexture->view(), ImVec2(128.0f, 128.0f), ImVec2(0, 1), ImVec2(1, 0));
                     }
 
-                    ImGui::EndDragDropTarget();
+                    if (ImGui::BeginDragDropTarget()) {
+                        auto payload = ImGui::AcceptDragDropPayload("image");
+
+                        if (payload != nullptr) {
+                            auto path = std::filesystem::path(static_cast<char *>(payload->Data));
+
+                            if (!m_assetManager->isLoaded(path)) {
+                                m_assetManager->loadAsset(path);
+                            }
+
+                            auto texture = m_assetManager->getTextureById(m_assetManager->getIdByPath(path));
+
+                            sprite.texture = texture;
+                        }
+
+                        ImGui::EndDragDropTarget();
+                    }
                 }
             }
         }
 
-        auto hasRigidbody = m_selectedEntity->hasComponent<Rigidbody>();
-
-        if (hasRigidbody) {
+        if (m_selectedEntity->hasComponent<Rigidbody>()) {
             if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen)) {
-                auto &rigidbody = m_selectedEntity->getComponent<Rigidbody>();
-
                 if (ImGui::BeginPopupContextItem(nullptr)) {
                     if (ImGui::MenuItem("Remove component")) {
                         m_selectedEntity->removeComponent<Rigidbody>();
@@ -438,63 +434,65 @@ void Editor::onPropertiesPanel() {
                     ImGui::EndPopup();
                 }
 
-                const char *types[] = {
-                    "static",
-                    "dynamic",
-                    "kinematic",
-                };
+                if (m_selectedEntity->hasComponent<Rigidbody>()) {
+                    auto &rigidbody = m_selectedEntity->getComponent<Rigidbody>();
 
-                int currentItem {};
+                    static const char *types[] = {
+                        "static",
+                        "dynamic",
+                        "kinematic",
+                    };
 
-                switch (rigidbody.bodyType) {
-                    case Rigidbody::BodyType::Static:
-                        currentItem = 0;
+                    int currentItem {};
 
-                        break;
-                    case Rigidbody::BodyType::Dynamic:
-                        currentItem = 1;
-
-                        break;
-                    case Rigidbody::BodyType::Kinematic:
-                        currentItem = 2;
-
-                        break;
-                }
-
-                if (ImGui::Combo("Body type", &currentItem, types, 3)) {
-                    switch (currentItem) {
-                        case 0:
-                            rigidbody.bodyType = Rigidbody::BodyType::Static;
+                    switch (rigidbody.bodyType) {
+                        case Rigidbody::BodyType::Static:
+                            currentItem = 0;
 
                             break;
-                        case 1:
-                            rigidbody.bodyType = Rigidbody::BodyType::Dynamic;
+                        case Rigidbody::BodyType::Dynamic:
+                            currentItem = 1;
 
                             break;
-                        case 2:
-                            rigidbody.bodyType = Rigidbody::BodyType::Kinematic;
+                        case Rigidbody::BodyType::Kinematic:
+                            currentItem = 2;
 
                             break;
-                        default:
-                            assert(false);
                     }
+
+                    if (ImGui::Combo("Body type", &currentItem, types, 3)) {
+                        switch (currentItem) {
+                            case 0:
+                                rigidbody.bodyType = Rigidbody::BodyType::Static;
+
+                                break;
+                            case 1:
+                                rigidbody.bodyType = Rigidbody::BodyType::Dynamic;
+
+                                break;
+                            case 2:
+                                rigidbody.bodyType = Rigidbody::BodyType::Kinematic;
+
+                                break;
+                            default:
+                                assert(false);
+                        }
+                    }
+
+                    ImGui::Checkbox("Has fixed rotation", &rigidbody.hasFixedRotation);
+
+                    ImGui::DragFloat("Density", &rigidbody.density, 0.1f, 0.0f, 0.0f, "%.5f");
+                    ImGui::DragFloat("Friction", &rigidbody.friction, 0.1f, 0.0f, 0.0f, "%.5f");
+                    ImGui::DragFloat("Restitution", &rigidbody.restitution, 0.1f, 0.0f, 0.0f, "%.5f");
+                    ImGui::DragFloat(
+                        "Restitution threshold", &rigidbody.restitutionThreshold, 0.1f, 0.0f, 0.0f, "%.5f"
+                    );
                 }
-
-                ImGui::Checkbox("Has fixed rotation", &rigidbody.hasFixedRotation);
-
-                ImGui::DragFloat("Density", &rigidbody.density, 0.1f, 0.0f, 0.0f, "%.5f");
-                ImGui::DragFloat("Friction", &rigidbody.friction, 0.1f, 0.0f, 0.0f, "%.5f");
-                ImGui::DragFloat("Restitution", &rigidbody.restitution, 0.1f, 0.0f, 0.0f, "%.5f");
-                ImGui::DragFloat("Restitution threshold", &rigidbody.restitutionThreshold, 0.1f, 0.0f, 0.0f, "%.5f");
             }
         }
 
-        auto hasBoxCollider = m_selectedEntity->hasComponent<BoxCollider>();
-
-        if (hasBoxCollider) {
+        if (m_selectedEntity->hasComponent<BoxCollider>()) {
             if (ImGui::CollapsingHeader("Box collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-                auto &collider = m_selectedEntity->getComponent<BoxCollider>();
-
                 if (ImGui::BeginPopupContextItem(nullptr)) {
                     if (ImGui::MenuItem("Remove component")) {
                         m_selectedEntity->removeComponent<BoxCollider>();
@@ -503,8 +501,12 @@ void Editor::onPropertiesPanel() {
                     ImGui::EndPopup();
                 }
 
-                ImGui::DragFloat2("Size", glm::value_ptr(collider.size), 0.1f, 0.0f, 0.0f, "%.5f");
-                ImGui::DragFloat2("Offset", glm::value_ptr(collider.offset), 0.1f, 0.0f, 0.0f, "%.5f");
+                if (m_selectedEntity->hasComponent<BoxCollider>()) {
+                    auto &collider = m_selectedEntity->getComponent<BoxCollider>();
+
+                    ImGui::DragFloat2("Size", glm::value_ptr(collider.size), 0.1f, 0.0f, 0.0f, "%.5f");
+                    ImGui::DragFloat2("Offset", glm::value_ptr(collider.offset), 0.1f, 0.0f, 0.0f, "%.5f");
+                }
             }
         }
 
@@ -513,7 +515,7 @@ void Editor::onPropertiesPanel() {
         }
 
         if (ImGui::BeginPopup("add_component_popup")) {
-            if (!hasTransform) {
+            if (!m_selectedEntity->hasComponent<Transform>()) {
                 if (ImGui::Button("Transform")) {
                     m_selectedEntity->addComponent<Transform>();
 
@@ -521,7 +523,7 @@ void Editor::onPropertiesPanel() {
                 }
             }
 
-            if (!hasSprite) {
+            if (!m_selectedEntity->hasComponent<Sprite>()) {
                 if (ImGui::Button("Sprite")) {
                     m_selectedEntity->addComponent<Sprite>();
 
@@ -529,7 +531,7 @@ void Editor::onPropertiesPanel() {
                 }
             }
 
-            if (!hasRigidbody) {
+            if (!m_selectedEntity->hasComponent<Rigidbody>()) {
                 if (ImGui::Button("Rigidbody")) {
                     m_selectedEntity->addComponent<Rigidbody>();
 
@@ -537,7 +539,7 @@ void Editor::onPropertiesPanel() {
                 }
             }
 
-            if (!hasBoxCollider) {
+            if (!m_selectedEntity->hasComponent<BoxCollider>()) {
                 if (ImGui::Button("Box collider")) {
                     m_selectedEntity->addComponent<BoxCollider>();
 

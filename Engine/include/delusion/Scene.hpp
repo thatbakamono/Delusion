@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <box2d/box2d.h>
 
 #include "delusion/Entity.hpp"
@@ -22,6 +24,8 @@ class Scene {
 
         Scene &operator=(Scene &&other) noexcept;
 
+        [[nodiscard]] static Scene copy(Scene &source);
+
         void start();
 
         void stop();
@@ -39,6 +43,12 @@ class Scene {
         [[nodiscard]] const std::vector<Entity> &entities() const {
             return m_entities;
         }
+
+        [[nodiscard]] std::optional<Entity *> getById(UniqueId id);
     private:
+        [[nodiscard]] std::optional<Entity *> getById(Entity &parent, UniqueId id);
+
+        static void copyEntity(Entity &target, Entity &source);
+
         void updateRegistry(Entity &entity, entt::registry *registry);
 };

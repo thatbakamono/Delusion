@@ -33,13 +33,15 @@ class Editor {
 
         std::filesystem::path m_currentDirectory;
 
-        std::optional<Scene> m_scene;
+        std::shared_ptr<Scene> m_scene = std::make_shared<Scene>();
 
         std::unique_ptr<filewatch::FileWatch<std::string>> m_fileWatch;
 
         std::optional<std::filesystem::path> m_fileBeingRenamed;
 
         OrthographicCamera m_camera = OrthographicCamera(glm::vec3(0.0f, 0.0f, -1.0f));
+
+        std::shared_ptr<Scene> m_activeScene = m_scene;
 
         bool isPlaying = false;
     public:
@@ -55,8 +57,8 @@ class Editor {
 
         void update(std::shared_ptr<Texture2D> &viewportTexture, float deltaTime);
 
-        [[nodiscard]] std::optional<Scene> &scene() {
-            return m_scene;
+        [[nodiscard]] Scene *activeScene() {
+            return m_activeScene.get();
         }
 
         [[nodiscard]] OrthographicCamera &camera() {

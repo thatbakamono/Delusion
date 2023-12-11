@@ -37,6 +37,17 @@ struct Rigidbody {
         float friction = 0.5f;
         float restitution = 0.0f;
         float restitutionThreshold = 0.5f;
+
+        Rigidbody() = default;
+
+        Rigidbody(Rigidbody &other) {
+            bodyType = other.bodyType;
+            hasFixedRotation = other.hasFixedRotation;
+            density = other.density;
+            friction = other.friction;
+            restitution = other.restitution;
+            restitutionThreshold = other.restitutionThreshold;
+        }
     private:
         void *body {};
         void *fixture {};

@@ -4,6 +4,8 @@
 
 #include <entt/entt.hpp>
 
+#include "delusion/UniqueId.hpp"
+
 class Scene;
 
 class Entity {
@@ -11,9 +13,15 @@ class Entity {
         entt::registry *m_registry;
         entt::entity m_entityId;
 
+        UniqueId m_id;
+
         std::vector<Entity> m_children;
     public:
-        Entity(entt::registry *registry, const entt::entity entityId) : m_registry(registry), m_entityId(entityId) {}
+        Entity(entt::registry *registry, const entt::entity entityId)
+            : m_registry(registry), m_entityId(entityId), m_id(UniqueId()) {}
+
+        Entity(entt::registry *registry, const entt::entity entityId, UniqueId id)
+            : m_registry(registry), m_entityId(entityId), m_id(id) {}
 
         // TODO: Implement
         Entity(const Entity &other) = delete;
@@ -21,6 +29,7 @@ class Entity {
         Entity(Entity &&other) noexcept {
             m_registry = std::exchange(other.m_registry, nullptr);
             m_entityId = std::exchange(other.m_entityId, entt::null);
+            m_id = other.m_id;
             m_children = std::move(other.m_children);
         }
 
@@ -40,6 +49,7 @@ class Entity {
 
             m_registry = std::exchange(other.m_registry, nullptr);
             m_entityId = std::exchange(other.m_entityId, entt::null);
+            m_id = other.m_id;
             m_children = std::move(other.m_children);
 
             return *this;
@@ -53,8 +63,8 @@ class Entity {
             return &m_registry != &other.m_registry || m_entityId != other.m_entityId;
         }
 
-        [[nodiscard]] uint32_t id() {
-            return static_cast<uint32_t>(m_entityId);
+        [[nodiscard]] UniqueId id() const {
+            return m_id;
         }
 
         Entity &createChild() {

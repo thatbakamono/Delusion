@@ -92,7 +92,7 @@ void Editor::onProjectPanel() {
 void Editor::onMenuBar(Project &project) {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("Scene")) {
-            if (ImGui::MenuItem("Save", nullptr, false, m_scene != nullptr)) {
+            if (ImGui::MenuItem("Save as", nullptr, false, m_scene != nullptr)) {
                 // TODO: Support for non-ascii characters
                 NFD::UniquePath path;
 

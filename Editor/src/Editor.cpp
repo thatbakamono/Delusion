@@ -364,18 +364,18 @@ void Editor::onPropertiesPanel() {
     ImGui::Begin("Properties");
 
     if (m_selectedEntity != nullptr) {
-        if (m_selectedEntity->hasComponent<Transform>()) {
+        if (m_selectedEntity->hasComponent<TransformComponent>()) {
             if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginPopupContextItem(nullptr)) {
                     if (ImGui::MenuItem("Remove component")) {
-                        m_selectedEntity->removeComponent<Transform>();
+                        m_selectedEntity->removeComponent<TransformComponent>();
                     }
 
                     ImGui::EndPopup();
                 }
 
-                if (m_selectedEntity->hasComponent<Transform>()) {
-                    auto &transform = m_selectedEntity->getComponent<Transform>();
+                if (m_selectedEntity->hasComponent<TransformComponent>()) {
+                    auto &transform = m_selectedEntity->getComponent<TransformComponent>();
 
                     ImGui::DragFloat2("Position", glm::value_ptr(transform.position), 0.1f, 0.0f, 0.0f, "%.5f");
                     ImGui::DragFloat("Rotation", &transform.rotation, 0.1f, 0.0f, 0.0f, "%.5f");
@@ -384,18 +384,18 @@ void Editor::onPropertiesPanel() {
             }
         }
 
-        if (m_selectedEntity->hasComponent<Sprite>()) {
+        if (m_selectedEntity->hasComponent<SpriteComponent>()) {
             if (ImGui::CollapsingHeader("Sprite", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginPopupContextItem(nullptr)) {
                     if (ImGui::MenuItem("Remove component")) {
-                        m_selectedEntity->removeComponent<Sprite>();
+                        m_selectedEntity->removeComponent<SpriteComponent>();
                     }
 
                     ImGui::EndPopup();
                 }
 
-                if (m_selectedEntity->hasComponent<Sprite>()) {
-                    auto &sprite = m_selectedEntity->getComponent<Sprite>();
+                if (m_selectedEntity->hasComponent<SpriteComponent>()) {
+                    auto &sprite = m_selectedEntity->getComponent<SpriteComponent>();
 
                     if (sprite.texture != nullptr) {
                         ImGui::Image(sprite.texture->view(), ImVec2(128.0f, 128.0f), ImVec2(0, 1), ImVec2(1, 0));
@@ -424,18 +424,18 @@ void Editor::onPropertiesPanel() {
             }
         }
 
-        if (m_selectedEntity->hasComponent<Rigidbody>()) {
+        if (m_selectedEntity->hasComponent<RigidbodyComponent>()) {
             if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginPopupContextItem(nullptr)) {
                     if (ImGui::MenuItem("Remove component")) {
-                        m_selectedEntity->removeComponent<Rigidbody>();
+                        m_selectedEntity->removeComponent<RigidbodyComponent>();
                     }
 
                     ImGui::EndPopup();
                 }
 
-                if (m_selectedEntity->hasComponent<Rigidbody>()) {
-                    auto &rigidbody = m_selectedEntity->getComponent<Rigidbody>();
+                if (m_selectedEntity->hasComponent<RigidbodyComponent>()) {
+                    auto &rigidbody = m_selectedEntity->getComponent<RigidbodyComponent>();
 
                     static const char *types[] = {
                         "static",
@@ -446,15 +446,15 @@ void Editor::onPropertiesPanel() {
                     int currentItem {};
 
                     switch (rigidbody.bodyType) {
-                        case Rigidbody::BodyType::Static:
+                        case RigidbodyComponent::BodyType::Static:
                             currentItem = 0;
 
                             break;
-                        case Rigidbody::BodyType::Dynamic:
+                        case RigidbodyComponent::BodyType::Dynamic:
                             currentItem = 1;
 
                             break;
-                        case Rigidbody::BodyType::Kinematic:
+                        case RigidbodyComponent::BodyType::Kinematic:
                             currentItem = 2;
 
                             break;
@@ -463,15 +463,15 @@ void Editor::onPropertiesPanel() {
                     if (ImGui::Combo("Body type", &currentItem, types, 3)) {
                         switch (currentItem) {
                             case 0:
-                                rigidbody.bodyType = Rigidbody::BodyType::Static;
+                                rigidbody.bodyType = RigidbodyComponent::BodyType::Static;
 
                                 break;
                             case 1:
-                                rigidbody.bodyType = Rigidbody::BodyType::Dynamic;
+                                rigidbody.bodyType = RigidbodyComponent::BodyType::Dynamic;
 
                                 break;
                             case 2:
-                                rigidbody.bodyType = Rigidbody::BodyType::Kinematic;
+                                rigidbody.bodyType = RigidbodyComponent::BodyType::Kinematic;
 
                                 break;
                             default:
@@ -491,18 +491,18 @@ void Editor::onPropertiesPanel() {
             }
         }
 
-        if (m_selectedEntity->hasComponent<BoxCollider>()) {
+        if (m_selectedEntity->hasComponent<BoxColliderComponent>()) {
             if (ImGui::CollapsingHeader("Box collider", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginPopupContextItem(nullptr)) {
                     if (ImGui::MenuItem("Remove component")) {
-                        m_selectedEntity->removeComponent<BoxCollider>();
+                        m_selectedEntity->removeComponent<BoxColliderComponent>();
                     }
 
                     ImGui::EndPopup();
                 }
 
-                if (m_selectedEntity->hasComponent<BoxCollider>()) {
-                    auto &collider = m_selectedEntity->getComponent<BoxCollider>();
+                if (m_selectedEntity->hasComponent<BoxColliderComponent>()) {
+                    auto &collider = m_selectedEntity->getComponent<BoxColliderComponent>();
 
                     ImGui::DragFloat2("Size", glm::value_ptr(collider.size), 0.1f, 0.0f, 0.0f, "%.5f");
                     ImGui::DragFloat2("Offset", glm::value_ptr(collider.offset), 0.1f, 0.0f, 0.0f, "%.5f");
@@ -515,33 +515,33 @@ void Editor::onPropertiesPanel() {
         }
 
         if (ImGui::BeginPopup("add_component_popup")) {
-            if (!m_selectedEntity->hasComponent<Transform>()) {
+            if (!m_selectedEntity->hasComponent<TransformComponent>()) {
                 if (ImGui::Button("Transform")) {
-                    m_selectedEntity->addComponent<Transform>();
+                    m_selectedEntity->addComponent<TransformComponent>();
 
                     ImGui::CloseCurrentPopup();
                 }
             }
 
-            if (!m_selectedEntity->hasComponent<Sprite>()) {
+            if (!m_selectedEntity->hasComponent<SpriteComponent>()) {
                 if (ImGui::Button("Sprite")) {
-                    m_selectedEntity->addComponent<Sprite>();
+                    m_selectedEntity->addComponent<SpriteComponent>();
 
                     ImGui::CloseCurrentPopup();
                 }
             }
 
-            if (!m_selectedEntity->hasComponent<Rigidbody>()) {
+            if (!m_selectedEntity->hasComponent<RigidbodyComponent>()) {
                 if (ImGui::Button("Rigidbody")) {
-                    m_selectedEntity->addComponent<Rigidbody>();
+                    m_selectedEntity->addComponent<RigidbodyComponent>();
 
                     ImGui::CloseCurrentPopup();
                 }
             }
 
-            if (!m_selectedEntity->hasComponent<BoxCollider>()) {
+            if (!m_selectedEntity->hasComponent<BoxColliderComponent>()) {
                 if (ImGui::Button("Box collider")) {
-                    m_selectedEntity->addComponent<BoxCollider>();
+                    m_selectedEntity->addComponent<BoxColliderComponent>();
 
                     ImGui::CloseCurrentPopup();
                 }

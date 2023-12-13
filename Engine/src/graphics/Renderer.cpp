@@ -107,11 +107,11 @@ void Renderer::renderScene(
     bool isFirst = true;
 
     for (Entity &entity : scene.entities()) {
-        if (!entity.hasComponent<Transform>() || !entity.hasComponent<Sprite>())
+        if (!entity.hasComponent<TransformComponent>() || !entity.hasComponent<SpriteComponent>())
             continue;
 
-        auto &transform = entity.getComponent<Transform>();
-        auto &sprite = entity.getComponent<Sprite>();
+        auto &transform = entity.getComponent<TransformComponent>();
+        auto &sprite = entity.getComponent<SpriteComponent>();
 
         if (sprite.texture == nullptr)
             continue;

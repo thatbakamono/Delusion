@@ -43,23 +43,23 @@ Scene Scene::copy(Scene &source) {
 void Scene::start() {
     m_physicsWorld = std::unique_ptr<b2World>(new b2World({ 0.0f, -10.0f }));
 
-    auto view = m_registry.view<Transform, Rigidbody>();
+    auto view = m_registry.view<TransformComponent, RigidbodyComponent>();
 
     for (auto entity : view) {
-        auto [transform, rigidbody] = view.get<Transform, Rigidbody>(entity);
+        auto [transform, rigidbody] = view.get<TransformComponent, RigidbodyComponent>(entity);
 
         b2BodyType bodyType {};
 
         switch (rigidbody.bodyType) {
-            case Rigidbody::BodyType::Static:
+            case RigidbodyComponent::BodyType::Static:
                 bodyType = b2BodyType::b2_staticBody;
 
                 break;
-            case Rigidbody::BodyType::Dynamic:
+            case RigidbodyComponent::BodyType::Dynamic:
                 bodyType = b2BodyType::b2_dynamicBody;
 
                 break;
-            case Rigidbody::BodyType::Kinematic:
+            case RigidbodyComponent::BodyType::Kinematic:
                 bodyType = b2BodyType::b2_kinematicBody;
 
                 break;
@@ -87,8 +87,8 @@ void Scene::start() {
 
         b2Fixture *fixture;
 
-        if (m_registry.any_of<BoxCollider>(entity)) {
-            auto &collider = m_registry.get<BoxCollider>(entity);
+        if (m_registry.any_of<BoxColliderComponent>(entity)) {
+            auto &collider = m_registry.get<BoxColliderComponent>(entity);
 
             b2PolygonShape boxShape;
             boxShape.SetAsBox(transform.scale.x * collider.size.x * 0.5f, transform.scale.y * collider.size.y * 0.5f);
@@ -118,10 +118,10 @@ void Scene::onUpdate(float deltaTime) {
 
     m_physicsWorld->Step(deltaTime, velocityIterations, positionIterations);
 
-    auto view = m_registry.view<Transform, Rigidbody>();
+    auto view = m_registry.view<TransformComponent, RigidbodyComponent>();
 
     for (auto entity : view) {
-        auto [transform, rigidbody] = view.get<Transform, Rigidbody>(entity);
+        auto [transform, rigidbody] = view.get<TransformComponent, RigidbodyComponent>(entity);
 
         b2Body *body = static_cast<b2Body *>(rigidbody.body);
 
@@ -188,28 +188,28 @@ std::optional<Entity *> Scene::getById(Entity &parent, UniqueId id) {
 void Scene::copyEntity(Entity &target, Entity &source) {
     target.m_id = source.m_id;
 
-    if (source.hasComponent<Transform>()) {
-        auto &transform = source.getComponent<Transform>();
+    if (source.hasComponent<TransformComponent>()) {
+        auto &transform = source.getComponent<TransformComponent>();
 
-        target.addComponent<Transform>(transform);
+        target.addComponent<TransformComponent>(transform);
     }
 
-    if (source.hasComponent<Sprite>()) {
-        auto &sprite = source.getComponent<Sprite>();
+    if (source.hasComponent<SpriteComponent>()) {
+        auto &sprite = source.getComponent<SpriteComponent>();
 
-        target.addComponent<Sprite>(sprite);
+        target.addComponent<SpriteComponent>(sprite);
     }
 
-    if (source.hasComponent<Rigidbody>()) {
-        auto &rigidbody = source.getComponent<Rigidbody>();
+    if (source.hasComponent<RigidbodyComponent>()) {
+        auto &rigidbody = source.getComponent<RigidbodyComponent>();
 
-        target.addComponent<Rigidbody>(rigidbody);
+        target.addComponent<RigidbodyComponent>(rigidbody);
     }
 
-    if (source.hasComponent<BoxCollider>()) {
-        auto &collider = source.getComponent<BoxCollider>();
+    if (source.hasComponent<BoxColliderComponent>()) {
+        auto &collider = source.getComponent<BoxColliderComponent>();
 
-        target.addComponent<BoxCollider>(collider);
+        target.addComponent<BoxColliderComponent>(collider);
     }
 
     for (auto &child : source.children()) {

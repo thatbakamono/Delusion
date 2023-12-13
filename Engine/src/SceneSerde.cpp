@@ -54,7 +54,7 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
             auto rotation = rotationNode.as<float>();
             glm::vec2 scale(scaleNode["width"].as<float>(), scaleNode["height"].as<float>());
 
-            entity.addComponent<Transform>(position, scale, rotation);
+            entity.addComponent<TransformComponent>(position, scale, rotation);
         }
 
         auto spriteNode = componentsNode["sprite"];
@@ -69,7 +69,7 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
 
             auto texture = m_assetManager->getTextureById(id);
 
-            entity.addComponent<Sprite>(texture);
+            entity.addComponent<SpriteComponent>(texture);
         }
 
         auto rigidbodyNode = componentsNode["rigidbody"];
@@ -77,14 +77,14 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
         if (rigidbodyNode) {
             auto bodyTypeText = rigidbodyNode["body-type"].as<std::string>();
 
-            Rigidbody::BodyType bodyType {};
+            RigidbodyComponent::BodyType bodyType {};
 
             if (bodyTypeText == "static") {
-                bodyType = Rigidbody::BodyType::Static;
+                bodyType = RigidbodyComponent::BodyType::Static;
             } else if (bodyTypeText == "dynamic") {
-                bodyType = Rigidbody::BodyType::Dynamic;
+                bodyType = RigidbodyComponent::BodyType::Dynamic;
             } else if (bodyTypeText == "kinematic") {
-                bodyType = Rigidbody::BodyType::Kinematic;
+                bodyType = RigidbodyComponent::BodyType::Kinematic;
             } else {
                 assert(false);
             }
@@ -95,7 +95,7 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
             auto restitution = rigidbodyNode["restitution"].as<float>();
             auto restitutionThreshold = rigidbodyNode["restitution-threshold"].as<float>();
 
-            Rigidbody rigidbody = {};
+            RigidbodyComponent rigidbody = {};
             rigidbody.bodyType = bodyType;
             rigidbody.hasFixedRotation = hasFixedRotation;
             rigidbody.density = density;
@@ -103,7 +103,7 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
             rigidbody.restitution = restitution;
             rigidbody.restitutionThreshold = restitutionThreshold;
 
-            entity.addComponent<Rigidbody>(rigidbody);
+            entity.addComponent<RigidbodyComponent>(rigidbody);
         }
 
         auto boxColliderNode = componentsNode["box-collider"];
@@ -115,7 +115,7 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
             glm::vec2 size = { sizeNode["width"].as<float>(), sizeNode["height"].as<float>() };
             glm::vec2 offset = { offsetNode["x"].as<float>(), offsetNode["y"].as<float>() };
 
-            entity.addComponent<BoxCollider>(size, offset);
+            entity.addComponent<BoxColliderComponent>(size, offset);
         }
     }
 
@@ -135,13 +135,13 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
     emitter << YAML::BeginMap;
 
     // TODO: Implement some kind of component registry with metadata, so it doesn't have to be done manually
-    if (entity.hasComponent<Transform>() || entity.hasComponent<Sprite>() || entity.hasComponent<Rigidbody>() ||
-        entity.hasComponent<BoxCollider>()) {
+    if (entity.hasComponent<TransformComponent>() || entity.hasComponent<SpriteComponent>() || entity.hasComponent<RigidbodyComponent>() ||
+        entity.hasComponent<BoxColliderComponent>()) {
         emitter << YAML::Key << "components";
         emitter << YAML::BeginMap;
 
-        if (entity.hasComponent<Transform>()) {
-            const auto &transform = entity.getComponent<Transform>();
+        if (entity.hasComponent<TransformComponent>()) {
+            const auto &transform = entity.getComponent<TransformComponent>();
 
             emitter << YAML::Key << "transform";
             emitter << YAML::BeginMap;
@@ -174,8 +174,8 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
             emitter << YAML::EndMap;
         }
 
-        if (entity.hasComponent<Sprite>()) {
-            const auto &sprite = entity.getComponent<Sprite>();
+        if (entity.hasComponent<SpriteComponent>()) {
+            const auto &sprite = entity.getComponent<SpriteComponent>();
 
             emitter << YAML::Key << "sprite";
             emitter << YAML::BeginMap;
@@ -186,8 +186,8 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
             emitter << YAML::EndMap;
         }
 
-        if (entity.hasComponent<Rigidbody>()) {
-            const auto &rigidbody = entity.getComponent<Rigidbody>();
+        if (entity.hasComponent<RigidbodyComponent>()) {
+            const auto &rigidbody = entity.getComponent<RigidbodyComponent>();
 
             emitter << YAML::Key << "rigidbody";
             emitter << YAML::BeginMap;
@@ -196,15 +196,15 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
 
             switch (rigidbody.bodyType) {
 
-                case Rigidbody::BodyType::Static:
+                case RigidbodyComponent::BodyType::Static:
                     emitter << YAML::Value << "static";
 
                     break;
-                case Rigidbody::BodyType::Dynamic:
+                case RigidbodyComponent::BodyType::Dynamic:
                     emitter << YAML::Value << "dynamic";
 
                     break;
-                case Rigidbody::BodyType::Kinematic:
+                case RigidbodyComponent::BodyType::Kinematic:
                     emitter << YAML::Value << "kinematic";
 
                     break;
@@ -228,8 +228,8 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
             emitter << YAML::EndMap;
         }
 
-        if (entity.hasComponent<BoxCollider>()) {
-            const auto &collider = entity.getComponent<BoxCollider>();
+        if (entity.hasComponent<BoxColliderComponent>()) {
+            const auto &collider = entity.getComponent<BoxColliderComponent>();
 
             emitter << YAML::Key << "box-collider";
             emitter << YAML::BeginMap;

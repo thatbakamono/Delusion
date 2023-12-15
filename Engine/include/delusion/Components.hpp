@@ -5,6 +5,7 @@
 #include <glm/vec2.hpp>
 
 #include "delusion/graphics/Texture2D.hpp"
+#include "delusion/scripting/Script.hpp"
 
 class Scene;
 
@@ -58,4 +59,8 @@ struct RigidbodyComponent {
 struct BoxColliderComponent {
         glm::vec2 size { 1.0f, 1.0f };
         glm::vec2 offset;
+};
+
+struct ScriptComponent {
+        std::shared_ptr<Script> script;
 };

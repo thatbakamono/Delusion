@@ -5,6 +5,7 @@
 #include <box2d/box2d.h>
 
 #include "delusion/Entity.hpp"
+#include "delusion/scripting/Lua.hpp"
 
 class Scene {
     private:
@@ -13,6 +14,7 @@ class Scene {
         std::vector<Entity> m_entities;
 
         std::unique_ptr<b2World> m_physicsWorld;
+        std::unique_ptr<Lua> m_lua;
     public:
         Scene() = default;
 
@@ -26,7 +28,7 @@ class Scene {
 
         [[nodiscard]] static Scene copy(Scene &source);
 
-        void start();
+        void start(const std::filesystem::path &assetsDirectory);
 
         void stop();
 

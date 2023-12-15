@@ -6,6 +6,7 @@
 #include "delusion/formats/ImageDecoder.hpp"
 #include "delusion/graphics/Texture2D.hpp"
 #include "delusion/io/FileUtilities.hpp"
+#include "delusion/scripting/Script.hpp"
 #include "delusion/MetadataSerde.hpp"
 #include "delusion/UniqueId.hpp"
 
@@ -18,18 +19,19 @@ class AssetManager {
         std::unordered_map<std::filesystem::path, UniqueId> m_pathToIdMappings;
 
         std::unordered_map<UniqueId, std::shared_ptr<Texture2D>> m_textures;
+        std::unordered_map<UniqueId, std::shared_ptr<Script>> m_scripts;
     public:
         AssetManager(WGPUDevice device, WGPUQueue queue) : m_device(device), m_queue(queue) {}
 
         [[nodiscard]] bool isLoaded(UniqueId id) {
-            return m_textures.contains(id);
+            return m_textures.contains(id) || m_scripts.contains(id);
         }
 
         [[nodiscard]] bool isLoaded(const std::filesystem::path &assetPath) {
             if (m_pathToIdMappings.contains(assetPath)) {
                 auto id = m_pathToIdMappings.at(assetPath);
 
-                return m_textures.contains(id);
+                return m_textures.contains(id) || m_scripts.contains(id);
             } else {
                 return false;
             }
@@ -51,6 +53,14 @@ class AssetManager {
                     m_textures[metadata.id] = Texture2D::create(metadata.id, m_device, m_queue, image);
                     m_idToPathMappings[metadata.id] = assetPath;
                 }
+            } else if (assetPath.extension() == ".lua") {
+                if (!m_scripts.contains(metadata.id)) {
+                    auto name = assetPath.string();
+                    auto script = std::make_shared<Script>(metadata.id, name, readAsString(assetPath).value());
+
+                    m_scripts[metadata.id] = script;
+                    m_idToPathMappings[metadata.id] = assetPath;
+                }
             }
 
             return metadata.id;
@@ -65,6 +75,13 @@ class AssetManager {
 
                     m_textures[id] = Texture2D::create(id, m_device, m_queue, image);
                 }
+            } else if (assetPath.extension() == ".lua") {
+                if (!m_scripts.contains(id)) {
+                    auto name = assetPath.string();
+                    auto script = std::make_shared<Script>(id, name, readAsString(assetPath).value());
+
+                    m_scripts[id] = script;
+                }
             }
         }
 
@@ -75,7 +92,7 @@ class AssetManager {
 
                     auto extension = path.extension();
 
-                    if (extension == ".png") {
+                    if (extension == ".png" || extension == ".lua") {
                         auto metadataExtension = std::format("{}.{}", path.extension().string(), "metadata");
 
                         path.replace_extension(metadataExtension);
@@ -97,7 +114,7 @@ class AssetManager {
         void generateMetadataForFile(const std::filesystem::path &filePath) {
             auto extension = filePath.extension();
 
-            if (extension == ".png") {
+            if (extension == ".png" || extension == ".lua") {
                 auto metadataExtension = std::format("{}.{}", filePath.extension().string(), "metadata");
 
                 auto metadataPath = filePath;
@@ -146,7 +163,7 @@ class AssetManager {
 
                     auto extension = path.extension();
 
-                    if (extension == ".png") {
+                    if (extension == ".png" || extension == ".lua") {
                         auto metadataExtension = std::format("{}.{}", path.extension().string(), "metadata");
 
                         auto metadataPath = path;
@@ -173,7 +190,7 @@ class AssetManager {
         void loadMapping(const std::filesystem::path &filePath) {
             auto extension = filePath.extension();
 
-            if (extension == ".png") {
+            if (extension == ".png" || extension == ".lua") {
                 auto metadataExtension = std::format("{}.{}", filePath.extension().string(), "metadata");
 
                 auto metadataPath = filePath;
@@ -208,7 +225,15 @@ class AssetManager {
             return m_pathToIdMappings.at(path);
         }
 
+        [[nodiscard]] std::filesystem::path getPathById(UniqueId id) const {
+            return m_idToPathMappings.at(id);
+        }
+
         [[nodiscard]] std::shared_ptr<Texture2D> getTextureById(UniqueId id) const {
             return m_textures.at(id);
+        }
+
+        [[nodiscard]] std::shared_ptr<Script> getScriptById(UniqueId id) const {
+            return m_scripts.at(id);
         }
 };

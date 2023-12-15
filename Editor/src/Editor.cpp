@@ -184,7 +184,7 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float 
 
         if (!isPlaying) {
             m_activeScene = std::make_shared<Scene>(Scene::copy(*m_scene));
-            m_activeScene->start();
+            m_activeScene->start(m_project->assetsDirectoryPath());
 
             if (selectedEntityId.has_value()) {
                 auto entity = m_activeScene->getById(selectedEntityId.value());
@@ -336,6 +336,16 @@ void Editor::onAssetBrowserPanel(Project &project) {
                     auto pathText = path.string();
 
                     ImGui::SetDragDropPayload("scene", pathText.c_str(), pathText.size() + 1, ImGuiCond_Once);
+
+                    ImGui::EndDragDropSource();
+                }
+            }
+
+            if (extensionText == ".lua") {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    auto pathText = path.string();
+
+                    ImGui::SetDragDropPayload("script", pathText.c_str(), pathText.size() + 1, ImGuiCond_Once);
 
                     ImGui::EndDragDropSource();
                 }
@@ -510,6 +520,50 @@ void Editor::onPropertiesPanel() {
             }
         }
 
+        if (m_selectedEntity->hasComponent<ScriptComponent>()) {
+            if (ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen)) {
+                if (ImGui::BeginPopupContextItem(nullptr)) {
+                    if (ImGui::MenuItem("Remove component")) {
+                        m_selectedEntity->removeComponent<ScriptComponent>();
+                    }
+
+                    ImGui::EndPopup();
+                }
+
+                if (m_selectedEntity->hasComponent<ScriptComponent>()) {
+                    auto &scriptComponent = m_selectedEntity->getComponent<ScriptComponent>();
+
+                    if (scriptComponent.script == nullptr) {
+                        ImGui::TextWrapped("No script attached");
+                    } else {
+                        auto path = m_assetManager->getPathById(scriptComponent.script->id());
+
+                        auto relativePath = std::filesystem::relative(path, m_project->assetsDirectoryPath());
+
+                        ImGui::TextWrapped("Script: %ls", relativePath.c_str());
+                    }
+
+                    if (ImGui::BeginDragDropTarget()) {
+                        auto payload = ImGui::AcceptDragDropPayload("script");
+
+                        if (payload != nullptr) {
+                            auto path = std::filesystem::path(static_cast<char *>(payload->Data));
+
+                            if (!m_assetManager->isLoaded(path)) {
+                                m_assetManager->loadAsset(path);
+                            }
+
+                            auto script = m_assetManager->getScriptById(m_assetManager->getIdByPath(path));
+
+                            scriptComponent.script = script;
+                        }
+
+                        ImGui::EndDragDropTarget();
+                    }
+                }
+            }
+        }
+
         if (ImGui::Button("Add component")) {
             ImGui::OpenPopup("add_component_popup");
         }
@@ -542,6 +596,14 @@ void Editor::onPropertiesPanel() {
             if (!m_selectedEntity->hasComponent<BoxColliderComponent>()) {
                 if (ImGui::Button("Box collider")) {
                     m_selectedEntity->addComponent<BoxColliderComponent>();
+
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            if (!m_selectedEntity->hasComponent<ScriptComponent>()) {
+                if (ImGui::Button("Script")) {
+                    m_selectedEntity->addComponent<ScriptComponent>();
 
                     ImGui::CloseCurrentPopup();
                 }

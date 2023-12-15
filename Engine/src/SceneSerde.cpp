@@ -117,6 +117,21 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
 
             entity.addComponent<BoxColliderComponent>(size, offset);
         }
+
+        auto scriptNode = componentsNode["script"];
+
+        if (scriptNode) {
+            auto idNode = scriptNode["id"];
+            auto id = UniqueId(idNode.as<uint64_t>());
+
+            if (!m_assetManager->isLoaded(id)) {
+                m_assetManager->loadAsset(id);
+            }
+
+            auto script = m_assetManager->getScriptById(id);
+
+            entity.addComponent<ScriptComponent>(script);
+        }
     }
 
     auto childrenNode = entityNode["children"];
@@ -255,6 +270,18 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
             emitter << YAML::Value << collider.offset.y;
 
             emitter << YAML::EndMap;
+
+            emitter << YAML::EndMap;
+        }
+
+        if (entity.hasComponent<ScriptComponent>()) {
+            const auto &script = entity.getComponent<ScriptComponent>();
+
+            emitter << YAML::Key << "script";
+            emitter << YAML::BeginMap;
+
+            emitter << YAML::Key << "id";
+            emitter << YAML::Value << script.script->id().value();
 
             emitter << YAML::EndMap;
         }

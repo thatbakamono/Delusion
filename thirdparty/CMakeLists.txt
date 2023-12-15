@@ -15,6 +15,18 @@ add_subdirectory(glfw)
 add_subdirectory(glfw3webgpu)
 add_subdirectory(glm)
 add_subdirectory(imgui)
+
+set(LUAU_BUILD_CLI OFF)
+set(LUAU_BUILD_TESTS OFF)
+
+FetchContent_Declare(
+    luau
+    GIT_REPOSITORY https://github.com/luau-lang/luau
+    GIT_TAG 0.606
+)
+
+FetchContent_MakeAvailable(luau)
+
 add_subdirectory(nativefiledialog-extended)
 add_subdirectory(webgpu-headers)
 

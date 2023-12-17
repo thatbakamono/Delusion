@@ -2,11 +2,22 @@
 
 #include <cassert>
 #include <iostream>
+#include <memory>
 
 #include <glfw/glfw3.h>
 
+#include "delusion/Scene.hpp"
+#include "delusion/Window.hpp"
+
+class Engine;
+
+static std::unique_ptr<Engine> s_engine;
+
 class Engine {
-    public:
+    private:
+        std::shared_ptr<Window> m_currentWindow;
+        std::shared_ptr<Scene> m_currentScene;
+
         Engine() {
             if (glfwInit() != GLFW_TRUE) {
                 throw std::exception("GLFW initialization failed");
@@ -14,9 +25,33 @@ class Engine {
 
             glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         }
-
+    public:
         ~Engine() {
             glfwTerminate();
+        }
+
+        static Engine *get() {
+            if (s_engine == nullptr) {
+                s_engine = std::unique_ptr<Engine>(new Engine());
+            }
+
+            return s_engine.get();
+        }
+
+        [[nodiscard]] Window *currentWindow() const {
+            return m_currentWindow.get();
+        }
+
+        void setCurrentWindow(std::shared_ptr<Window> window) {
+            m_currentWindow = std::move(window);
+        }
+
+        [[nodiscard]] Scene *currentScene() const {
+            return m_currentScene.get();
+        }
+
+        void setCurrentScene(std::shared_ptr<Scene> scene) {
+            m_currentScene = std::move(scene);
         }
 
         void pollEvents() {

@@ -11,7 +11,7 @@
 
 #include "delusion/Components.hpp"
 #include "delusion/io/FileUtilities.hpp"
-#include "delusion/SceneSerde.hpp"
+#include "delusion/scripting/Internals.hpp"
 #include "delusion/Utilities.hpp"
 
 void Editor::onEditorUpdate(std::shared_ptr<Texture2D> &viewportTexture, float deltaTime) {
@@ -31,7 +31,24 @@ void Editor::onEditorUpdate(std::shared_ptr<Texture2D> &viewportTexture, float d
 void Editor::onRuntimeUpdate(float deltaTime) {
     if (m_project.has_value()) {
         if (isPlaying) {
-            m_activeScene->onUpdate(deltaTime);
+            m_engine->currentScene()->forEachEntity([&deltaTime](Entity &entity) {
+                if (entity.hasComponent<ScriptComponent>()) {
+                    auto &script = entity.getComponent<ScriptComponent>();
+
+                    auto scriptClass = CSharpClass(static_cast<MonoClass *>(script.class_));
+                    auto instance = CSharpObject(static_cast<MonoObject *>(script.instance));
+
+                    auto onCreateMethod = scriptClass.getMethod("OnUpdate", 1);
+
+                    float *deltaTimePtr = &deltaTime;
+
+                    mono_runtime_invoke(
+                        onCreateMethod, instance.getMonoObject(), reinterpret_cast<void **>(&deltaTimePtr), nullptr
+                    );
+                }
+            });
+
+            m_engine->currentScene()->onUpdate(deltaTime);
         }
     }
 }
@@ -117,8 +134,8 @@ void Editor::onMenuBar(Project &project) {
 void Editor::onHierarchyPanel() {
     ImGui::Begin("Hierarchy");
 
-    if (m_activeScene != nullptr) {
-        auto *scene = m_activeScene.get();
+    if (m_engine->currentScene() != nullptr) {
+        auto *scene = m_engine->currentScene();
 
         if (ImGui::BeginPopupContextWindow("hierarchy_context_menu", 1)) {
             if (ImGui::MenuItem("Create entity")) {
@@ -183,11 +200,115 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float 
         auto selectedEntityId = m_selectedEntity != nullptr ? std::make_optional(m_selectedEntity->id()) : std::nullopt;
 
         if (!isPlaying) {
-            m_activeScene = std::make_shared<Scene>(Scene::copy(*m_scene));
-            m_activeScene->start();
+            m_engine->setCurrentScene(std::make_shared<Scene>(Scene::copy(*m_scene)));
+            m_engine->currentScene()->start();
+
+            {
+                m_scriptEngine->setup();
+
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::IsKeyDown", &isKeyDown);
+
+                m_scriptEngine->setInternalCall(
+                    "DelusionSharp.Internals::HasTransformComponent", &hasTransformComponent
+                );
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetTransformPosition", &getTransformPosition);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetTransformPosition", &setTransformPosition);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetTransformScale", &getTransformScale);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetTransformScale", &setTransformScale);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetTransformRotation", &getTransformRotation);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetTransformRotation", &setTransformRotation);
+
+                m_scriptEngine->setInternalCall(
+                    "DelusionSharp.Internals::HasRigidbodyComponent", &hasRigidbodyComponent
+                );
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetRigidbodyBodyType", &getRigidbodyBodyType);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetRigidbodyBodyType", &setRigidbodyBodyType);
+                m_scriptEngine->setInternalCall(
+                    "DelusionSharp.Internals::GetRigidbodyHasFixedRotation", &getRigidbodyHasFixedRotation
+                );
+                m_scriptEngine->setInternalCall(
+                    "DelusionSharp.Internals::SetRigidbodyHasFixedRotation", &setRigidbodyHasFixedRotation
+                );
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetRigidbodyDensity", &getRigidbodyDensity);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetRigidbodyDensity", &setRigidbodyDensity);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetRigidbodyFriction", &getRigidbodyFriction);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetRigidbodyFriction", &setRigidbodyFriction);
+                m_scriptEngine->setInternalCall(
+                    "DelusionSharp.Internals::GetRigidbodyRestitution", &getRigidbodyRestitution
+                );
+                m_scriptEngine->setInternalCall(
+                    "DelusionSharp.Internals::SetRigidbodyRestitution", &setRigidbodyRestitution
+                );
+                m_scriptEngine->setInternalCall(
+                    "DelusionSharp.Internals::GetRigidbodyRestitutionThreshold", &getRigidbodyRestitutionThreshold
+                );
+                m_scriptEngine->setInternalCall(
+                    "DelusionSharp.Internals::SetRigidbodyRestitutionThreshold", &setRigidbodyRestitutionThreshold
+                );
+
+                m_scriptEngine->setInternalCall(
+                    "DelusionSharp.Internals::HasBoxColliderComponent", &hasBoxColliderComponent
+                );
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetBoxColliderSize", &getBoxColliderSize);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetBoxColliderSize", &setBoxColliderSize);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetBoxColliderOffset", &getBoxColliderOffset);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetBoxColliderOffset", &setBoxColliderOffset);
+
+                auto delusionSharpLibraryPath = std::filesystem::current_path() / "DelusionSharp.dll";
+                auto delusionSharpLibraryPathString = delusionSharpLibraryPath.string();
+
+                auto gameLibraryPath = m_project->assetsDirectoryPath() / "Game.dll";
+                auto gameLibraryPathString = gameLibraryPath.string();
+
+                auto delusionSharpAssembly = m_scriptEngine->loadAssembly(delusionSharpLibraryPathString);
+                auto gameAssembly = m_scriptEngine->loadAssembly(gameLibraryPathString);
+
+                auto scriptClass = delusionSharpAssembly.getClassByName("DelusionSharp", "Script");
+                auto entityClass = delusionSharpAssembly.getClassByName("DelusionSharp", "Entity");
+
+                m_engine->currentScene()->forEachEntity([this, &gameAssembly, &scriptClass,
+                                                         &entityClass](Entity &entity) {
+                    if (entity.hasComponent<ScriptComponent>()) {
+                        auto &script = entity.getComponent<ScriptComponent>();
+
+                        std::string scriptNamespace;
+                        std::string scriptName;
+
+                        auto dotIndex = script.name.find('.');
+
+                        if (dotIndex != std::string::npos) {
+                            scriptNamespace = script.name.substr(0, dotIndex);
+                            scriptName = script.name.substr(dotIndex + 1);
+                        } else {
+                            scriptNamespace = "";
+                            scriptName = script.name;
+                        }
+
+                        auto class_ = gameAssembly.getClassByName(scriptNamespace, scriptName);
+                        auto instance = m_scriptEngine->createInstance(class_);
+
+                        script.class_ = static_cast<void *>(class_.getMonoClass());
+                        script.instance = static_cast<void *>(instance.getMonoObject());
+
+                        auto entityInstance = m_scriptEngine->createInstance(entityClass);
+
+                        auto entityField = scriptClass.getField("_entity");
+                        auto idField = entityClass.getField("_id");
+
+                        auto id = entity.id().value();
+
+                        mono_field_set_value(entityInstance.getMonoObject(), idField, &id);
+                        mono_field_set_value(instance.getMonoObject(), entityField, entityInstance.getMonoObject());
+
+                        auto onCreateMethod = class_.getMethod("OnCreate", 0);
+
+                        mono_runtime_invoke(onCreateMethod, instance.getMonoObject(), nullptr, nullptr);
+                    }
+                });
+            }
 
             if (selectedEntityId.has_value()) {
-                auto entity = m_activeScene->getById(selectedEntityId.value());
+                auto entity = m_engine->currentScene()->getById(selectedEntityId.value());
 
                 if (entity.has_value()) {
                     m_selectedEntity = entity.value();
@@ -196,11 +317,13 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float 
                 }
             }
         } else {
-            m_activeScene->stop();
-            m_activeScene = m_scene;
+            m_scriptEngine->teardown();
+
+            m_engine->currentScene()->stop();
+            m_engine->setCurrentScene(m_scene);
 
             if (selectedEntityId.has_value()) {
-                auto entity = m_activeScene->getById(selectedEntityId.value());
+                auto entity = m_engine->currentScene()->getById(selectedEntityId.value());
 
                 if (entity.has_value()) {
                     m_selectedEntity = entity.value();
@@ -262,13 +385,13 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float 
             if (source.has_value()) {
                 m_selectedEntity = nullptr;
 
-                if (m_activeScene != nullptr) {
+                if (m_engine->currentScene() != nullptr) {
                     m_scene->stop();
                     isPlaying = false;
                 }
 
                 m_scene = std::make_shared<Scene>(m_sceneSerde.deserialize(source.value()));
-                m_activeScene = m_scene;
+                m_engine->setCurrentScene(m_scene);
             }
         }
 
@@ -510,6 +633,30 @@ void Editor::onPropertiesPanel() {
             }
         }
 
+        if (m_selectedEntity->hasComponent<ScriptComponent>()) {
+            if (ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen)) {
+                if (ImGui::BeginPopupContextItem(nullptr)) {
+                    if (ImGui::MenuItem("Remove component")) {
+                        m_selectedEntity->removeComponent<ScriptComponent>();
+                    }
+
+                    ImGui::EndPopup();
+                }
+
+                if (m_selectedEntity->hasComponent<ScriptComponent>()) {
+                    auto &script = m_selectedEntity->getComponent<ScriptComponent>();
+
+                    std::array<char, 256> nameBuffer {};
+
+                    std::copy(script.name.begin(), script.name.end(), nameBuffer.begin());
+
+                    ImGui::InputText("Name", nameBuffer.data(), nameBuffer.size());
+
+                    script.name = std::string(nameBuffer.data());
+                }
+            }
+        }
+
         if (ImGui::Button("Add component")) {
             ImGui::OpenPopup("add_component_popup");
         }
@@ -542,6 +689,14 @@ void Editor::onPropertiesPanel() {
             if (!m_selectedEntity->hasComponent<BoxColliderComponent>()) {
                 if (ImGui::Button("Box collider")) {
                     m_selectedEntity->addComponent<BoxColliderComponent>();
+
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            if (!m_selectedEntity->hasComponent<ScriptComponent>()) {
+                if (ImGui::Button("Script")) {
+                    m_selectedEntity->addComponent<ScriptComponent>();
 
                     ImGui::CloseCurrentPopup();
                 }

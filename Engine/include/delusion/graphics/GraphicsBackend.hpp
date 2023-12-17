@@ -25,7 +25,7 @@ class GraphicsBackend {
 
         ~GraphicsBackend();
 
-        void setup(const Window &window);
+        void setup(const Window *window);
 
         void configureSurface(uint32_t width, uint32_t height);
 

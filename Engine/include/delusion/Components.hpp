@@ -24,10 +24,10 @@ struct SpriteComponent {
 };
 
 struct RigidbodyComponent {
-        enum class BodyType {
-            Static,
-            Dynamic,
-            Kinematic
+        enum class BodyType : int {
+            Static = 0,
+            Dynamic = 1,
+            Kinematic = 2
         };
 
         BodyType bodyType = BodyType::Static;
@@ -58,4 +58,11 @@ struct RigidbodyComponent {
 struct BoxColliderComponent {
         glm::vec2 size { 1.0f, 1.0f };
         glm::vec2 offset;
+};
+
+struct ScriptComponent {
+        std::string name;
+
+        void *class_ {};
+        void *instance {};
 };

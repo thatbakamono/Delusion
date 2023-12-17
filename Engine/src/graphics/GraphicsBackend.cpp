@@ -28,8 +28,8 @@ GraphicsBackend::~GraphicsBackend() {
     }
 }
 
-void GraphicsBackend::setup(const Window &window) {
-    m_surface = glfwGetWGPUSurface(m_instance, window.inner());
+void GraphicsBackend::setup(const Window *window) {
+    m_surface = glfwGetWGPUSurface(m_instance, window->inner());
 
     WGPURequestAdapterOptions adapterOptions = {
         .nextInChain = nullptr,

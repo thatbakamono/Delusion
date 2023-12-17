@@ -10,6 +10,7 @@
 #include <delusion/formats/ImageDecoder.hpp>
 #include <delusion/graphics/GraphicsBackend.hpp>
 #include <delusion/graphics/Renderer.hpp>
+#include <delusion/scripting/ScriptEngine.hpp>
 #include <delusion/Window.hpp>
 
 #include "Editor.hpp"
@@ -18,15 +19,17 @@ int main() {
     constexpr int defaultWindowWidth = 1280;
     constexpr int defaultWindowHeight = 720;
 
-    Engine engine;
+    Engine *engine = Engine::get();
 
     NFD_Init();
 
     GraphicsBackend backend;
 
-    Window window("", defaultWindowWidth, defaultWindowHeight);
+    auto window = std::make_shared<Window>("", defaultWindowWidth, defaultWindowHeight);
 
-    backend.setup(window);
+    engine->setCurrentWindow(window);
+
+    backend.setup(window.get());
     backend.configureSurface(defaultWindowWidth, defaultWindowHeight);
 
     ImGui::CreateContext();
@@ -37,10 +40,12 @@ int main() {
     std::shared_ptr<Texture2D> viewportTexture =
         Texture2D::create(UniqueId(), backend.device(), defaultWindowWidth, defaultWindowHeight, true);
 
-    ImGui_ImplGlfw_InitForOther(window.inner(), true);
+    ImGui_ImplGlfw_InitForOther(window->inner(), true);
     ImGui_ImplWGPU_Init(backend.device(), 3, backend.preferredFormat(), WGPUTextureFormat_Undefined);
 
     Renderer renderer = Renderer::create(backend.device(), backend.queue(), backend.surfaceCapabilities());
+
+    auto scriptEngine = std::make_shared<ScriptEngine>();
 
     auto fileIconImage = ImageDecoder::decode("file.png");
     auto directoryIconImage = ImageDecoder::decode("directory.png");
@@ -60,8 +65,8 @@ int main() {
         Texture2D::create(UniqueId(), backend.device(), backend.queue(), emptyImage);
 
     Editor editor(
-        backend.device(), backend.queue(), emptyTexture, fileIconTexture, directoryIconTexture, playIconTexture,
-        stopIconTexture
+        engine, backend.device(), backend.queue(), scriptEngine, emptyTexture, fileIconTexture, directoryIconTexture,
+        playIconTexture, stopIconTexture
     );
 
     int previousWidth = defaultWindowWidth;
@@ -71,17 +76,17 @@ int main() {
     float currentFrameTime {};
     float deltaTime {};
 
-    while (window.isOpen()) {
+    while (window->isOpen()) {
         currentFrameTime = static_cast<float>(glfwGetTime());
         deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
 
-        engine.pollEvents();
+        engine->pollEvents();
 
         int currentWidth {};
         int currentHeight {};
 
-        glfwGetWindowSize(window.inner(), &currentWidth, &currentHeight);
+        glfwGetWindowSize(window->inner(), &currentWidth, &currentHeight);
 
         editor.onRuntimeUpdate(deltaTime);
 
@@ -108,7 +113,7 @@ int main() {
         WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(backend.device(), &encoderDescriptor);
 
         {
-            auto *scene = editor.activeScene();
+            auto *scene = engine->currentScene();
 
             if (scene != nullptr) {
                 renderer.renderScene(commandEncoder, viewportTexture->view(), editor.camera(), *scene);

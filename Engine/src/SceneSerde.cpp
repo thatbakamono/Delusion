@@ -117,6 +117,14 @@ void SceneSerde::deserializeEntity(YAML::Node &entityNode, Entity &entity) {
 
             entity.addComponent<BoxColliderComponent>(size, offset);
         }
+
+        auto scriptNode = componentsNode["script"];
+
+        if (scriptNode) {
+            auto name = scriptNode["name"].as<std::string>();
+
+            entity.addComponent<ScriptComponent>(name);
+        }
     }
 
     auto childrenNode = entityNode["children"];
@@ -135,8 +143,8 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
     emitter << YAML::BeginMap;
 
     // TODO: Implement some kind of component registry with metadata, so it doesn't have to be done manually
-    if (entity.hasComponent<TransformComponent>() || entity.hasComponent<SpriteComponent>() || entity.hasComponent<RigidbodyComponent>() ||
-        entity.hasComponent<BoxColliderComponent>()) {
+    if (entity.hasComponent<TransformComponent>() || entity.hasComponent<SpriteComponent>() ||
+        entity.hasComponent<RigidbodyComponent>() || entity.hasComponent<BoxColliderComponent>()) {
         emitter << YAML::Key << "components";
         emitter << YAML::BeginMap;
 
@@ -255,6 +263,18 @@ void SceneSerde::serializeEntity(YAML::Emitter &emitter, const Entity &entity) {
             emitter << YAML::Value << collider.offset.y;
 
             emitter << YAML::EndMap;
+
+            emitter << YAML::EndMap;
+        }
+
+        if (entity.hasComponent<ScriptComponent>()) {
+            const auto &script = entity.getComponent<ScriptComponent>();
+
+            emitter << YAML::Key << "script";
+            emitter << YAML::BeginMap;
+
+            emitter << YAML::Key << "name";
+            emitter << YAML::Value << script.name;
 
             emitter << YAML::EndMap;
         }

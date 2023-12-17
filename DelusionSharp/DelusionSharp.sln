@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DelusionSharp", "DelusionSharp.csproj", "{47F8DFD9-72EC-4865-A6FD-D19C2CFC06FC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{47F8DFD9-72EC-4865-A6FD-D19C2CFC06FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47F8DFD9-72EC-4865-A6FD-D19C2CFC06FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47F8DFD9-72EC-4865-A6FD-D19C2CFC06FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47F8DFD9-72EC-4865-A6FD-D19C2CFC06FC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

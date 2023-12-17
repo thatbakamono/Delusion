@@ -45,8 +45,20 @@ class Scene {
         }
 
         [[nodiscard]] std::optional<Entity *> getById(UniqueId id);
+
+        [[nodiscard]] std::optional<const Entity *> getById(UniqueId id) const;
+
+        void forEachEntity(const std::function<void(Entity &)> &callback);
+
+        [[nodiscard]] b2World *physicsWorld() const {
+            return m_physicsWorld.get();
+        }
     private:
         [[nodiscard]] std::optional<Entity *> getById(Entity &parent, UniqueId id);
+
+        [[nodiscard]] std::optional<const Entity *> getById(const Entity &parent, UniqueId id) const;
+
+        void forEachChild(Entity &parent, const std::function<void(Entity &)> &callback);
 
         static void copyEntity(Entity &target, Entity &source);
 

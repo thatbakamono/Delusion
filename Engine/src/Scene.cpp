@@ -167,6 +167,34 @@ std::optional<Entity *> Scene::getById(UniqueId id) {
     return std::nullopt;
 }
 
+std::optional<const Entity *> Scene::getById(UniqueId id) const {
+    for (auto &entity : m_entities) {
+        if (entity.id() == id) {
+            return std::make_optional(&entity);
+        }
+    }
+
+    for (auto &entity : m_entities) {
+        auto result = getById(entity, id);
+
+        if (result.has_value()) {
+            return result;
+        }
+    }
+
+    return std::nullopt;
+}
+
+void Scene::forEachEntity(const std::function<void(Entity &)> &callback) {
+    for (auto &entity : m_entities) {
+        callback(entity);
+    }
+
+    for (auto &entity : m_entities) {
+        forEachChild(entity, callback);
+    }
+}
+
 std::optional<Entity *> Scene::getById(Entity &parent, UniqueId id) {
     for (auto &child : parent.children()) {
         if (child.id() == id) {
@@ -183,6 +211,34 @@ std::optional<Entity *> Scene::getById(Entity &parent, UniqueId id) {
     }
 
     return std::nullopt;
+}
+
+std::optional<const Entity *> Scene::getById(const Entity &parent, UniqueId id) const {
+    for (auto &child : parent.children()) {
+        if (child.id() == id) {
+            return std::make_optional(&child);
+        }
+    }
+
+    for (auto &child : parent.children()) {
+        auto result = getById(child, id);
+
+        if (result.has_value()) {
+            return result;
+        }
+    }
+
+    return std::nullopt;
+}
+
+void Scene::forEachChild(Entity &parent, const std::function<void(Entity &)> &callback) {
+    for (auto &entity : parent.children()) {
+        callback(entity);
+    }
+
+    for (auto &entity : parent.children()) {
+        forEachChild(entity, callback);
+    }
 }
 
 void Scene::copyEntity(Entity &target, Entity &source) {
@@ -210,6 +266,12 @@ void Scene::copyEntity(Entity &target, Entity &source) {
         auto &collider = source.getComponent<BoxColliderComponent>();
 
         target.addComponent<BoxColliderComponent>(collider);
+    }
+
+    if (source.hasComponent<ScriptComponent>()) {
+        auto &script = source.getComponent<ScriptComponent>();
+
+        target.addComponent<ScriptComponent>(script);
     }
 
     for (auto &child : source.children()) {

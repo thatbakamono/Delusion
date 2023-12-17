@@ -17,6 +17,26 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(Corrosion)
 
+find_program(
+        DOTNET_EXECUTABLE
+        NAMES dotnet
+        HINTS "C:/Program Files/dotnet"
+)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(DOTNET_BUILD_TYPE "Debug")
+else ()
+    set(DOTNET_BUILD_TYPE "Release")
+endif ()
+
+add_custom_target(
+        DelusionSharp
+        COMMAND ${DOTNET_EXECUTABLE} build /p:Configuration=${DOTNET_BUILD_TYPE} /p:Platform="Any CPU"
+                && ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/DelusionSharp/bin/${DOTNET_BUILD_TYPE}/DelusionSharp.dll ${CMAKE_CURRENT_BINARY_DIR}/DelusionSharp.dll
+                && ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/DelusionSharp/bin/${DOTNET_BUILD_TYPE}/DelusionSharp.pdb ${CMAKE_CURRENT_BINARY_DIR}/DelusionSharp.pdb
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/DelusionSharp
+)
+
 add_subdirectory(Editor)
 add_subdirectory(Engine)
 add_subdirectory(firstparty)

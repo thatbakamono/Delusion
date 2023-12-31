@@ -653,6 +653,148 @@ void Editor::onPropertiesPanel() {
                     ImGui::InputText("Name", nameBuffer.data(), nameBuffer.size());
 
                     script.name = std::string(nameBuffer.data());
+
+                    if (isPlaying) {
+                        ImGui::Separator();
+
+                        CSharpClass scriptClass(static_cast<MonoClass *>(script.class_));
+
+                        for (auto &field : scriptClass.getFields()) {
+                            if (!field.isPublic()) {
+                                continue;
+                            }
+
+                            if (field.isStatic()) {
+                                continue;
+                            }
+
+                            auto type = field.getType();
+                            auto engineType = type.asEngineType();
+
+                            if (engineType.has_value()) {
+                                auto engineTypeValue = engineType.value();
+
+                                CSharpObject object(static_cast<MonoObject *>(script.instance));
+
+                                switch (engineTypeValue) {
+                                    case Boolean: {
+                                        auto value = field.getValue<bool>(object);
+
+                                        ImGui::Checkbox(field.getRawName(), &value);
+
+                                        field.setValue<bool>(object, value);
+
+                                        break;
+                                    }
+                                    case Char:
+                                        // TODO
+
+                                        break;
+                                    case Byte: {
+                                        auto value = field.getValue<uint8_t>(object);
+
+                                        ImGui::InputScalar(field.getRawName(), ImGuiDataType_U8, &value);
+
+                                        field.setValue<uint8_t>(object, value);
+
+                                        break;
+                                    }
+                                    case SByte: {
+                                        auto value = field.getValue<int8_t>(object);
+
+                                        ImGui::InputScalar(field.getRawName(), ImGuiDataType_S8, &value);
+
+                                        field.setValue<int8_t>(object, value);
+
+                                        break;
+                                    }
+                                    case Int16: {
+                                        auto value = field.getValue<int16_t>(object);
+
+                                        ImGui::InputScalar(field.getRawName(), ImGuiDataType_S16, &value);
+
+                                        field.setValue<int16_t>(object, value);
+
+                                        break;
+                                    }
+                                    case UInt16: {
+                                        auto value = field.getValue<uint16_t>(object);
+
+                                        ImGui::InputScalar(field.getRawName(), ImGuiDataType_U16, &value);
+
+                                        field.setValue<uint16_t>(object, value);
+
+                                        break;
+                                    }
+                                    case Int32: {
+                                        auto value = field.getValue<int32_t>(object);
+
+                                        ImGui::InputScalar(field.getRawName(), ImGuiDataType_S32, &value);
+
+                                        field.setValue<int32_t>(object, value);
+
+                                        break;
+                                    }
+                                    case UInt32: {
+                                        auto value = field.getValue<uint32_t>(object);
+
+                                        ImGui::InputScalar(field.getRawName(), ImGuiDataType_U32, &value);
+
+                                        field.setValue<uint32_t>(object, value);
+
+                                        break;
+                                    }
+                                    case Int64: {
+                                        auto value = field.getValue<int64_t>(object);
+
+                                        ImGui::InputScalar(field.getRawName(), ImGuiDataType_S64, &value);
+
+                                        field.setValue<int64_t>(object, value);
+
+                                        break;
+                                    }
+                                    case UInt64: {
+                                        auto value = field.getValue<uint64_t>(object);
+
+                                        ImGui::InputScalar(field.getRawName(), ImGuiDataType_U64, &value);
+
+                                        field.setValue<uint64_t>(object, value);
+
+                                        break;
+                                    }
+                                    case Float: {
+                                        auto value = field.getValue<float>(object);
+
+                                        ImGui::InputFloat(field.getRawName(), &value);
+
+                                        field.setValue<float>(object, value);
+
+                                        break;
+                                    }
+                                    case Double: {
+                                        auto value = field.getValue<double>(object);
+
+                                        ImGui::InputDouble(field.getRawName(), &value);
+
+                                        field.setValue<double>(object, value);
+
+                                        break;
+                                    }
+                                    case Vector2: {
+                                        auto value = field.getValue<glm::vec2>(object);
+
+                                        ImGui::DragFloat2(
+                                            field.getRawName(), glm::value_ptr(value), 0.1f, 0.0f, 0.0f, "%.5f"
+                                        );
+
+                                        field.setValue<glm::vec2>(object, value);
+
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

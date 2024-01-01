@@ -13,7 +13,7 @@
 #include <delusion/scripting/ScriptEngine.hpp>
 #include <delusion/Window.hpp>
 
-#include "Editor.hpp"
+#include "editor/Editor.hpp"
 
 int main() {
     constexpr int defaultWindowWidth = 1280;
@@ -23,16 +23,18 @@ int main() {
 
     NFD_Init();
 
-    GraphicsBackend backend;
+    auto backend = std::make_shared<GraphicsBackend>();
 
     auto window = std::make_shared<Window>("", defaultWindowWidth, defaultWindowHeight);
 
     engine->setCurrentWindow(window);
 
-    backend.setup(window.get());
-    backend.configureSurface(defaultWindowWidth, defaultWindowHeight);
+    backend->setup(window.get());
+    backend->configureSurface(defaultWindowWidth, defaultWindowHeight);
 
-    auto assetManager = std::make_shared<AssetManager>(backend.device(), backend.queue());
+    engine->setGraphicsBackend(backend);
+
+    auto assetManager = std::make_shared<AssetManager>(backend->device(), backend->queue());
 
     engine->setAssetManager(assetManager);
 
@@ -42,12 +44,12 @@ int main() {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     std::shared_ptr<Texture2D> viewportTexture =
-        Texture2D::create(UniqueId(), backend.device(), defaultWindowWidth, defaultWindowHeight, true);
+        Texture2D::create(UniqueId(), backend->device(), defaultWindowWidth, defaultWindowHeight, true);
 
     ImGui_ImplGlfw_InitForOther(window->inner(), true);
-    ImGui_ImplWGPU_Init(backend.device(), 3, backend.preferredFormat(), WGPUTextureFormat_Undefined);
+    ImGui_ImplWGPU_Init(backend->device(), 3, backend->preferredFormat(), WGPUTextureFormat_Undefined);
 
-    Renderer renderer = Renderer::create(backend.device(), backend.queue(), backend.surfaceCapabilities());
+    Renderer renderer = Renderer::create(backend->device(), backend->queue(), backend->surfaceCapabilities());
 
     auto scriptEngine = std::make_shared<ScriptEngine>();
 
@@ -56,29 +58,28 @@ int main() {
     auto playIconImage = ImageDecoder::decode("play.png");
     auto stopIconImage = ImageDecoder::decode("stop.png");
     std::shared_ptr<Texture2D> fileIconTexture =
-        Texture2D::create(UniqueId(), backend.device(), backend.queue(), fileIconImage);
+        Texture2D::create(UniqueId(), backend->device(), backend->queue(), fileIconImage);
     std::shared_ptr<Texture2D> directoryIconTexture =
-        Texture2D::create(UniqueId(), backend.device(), backend.queue(), directoryIconImage);
+        Texture2D::create(UniqueId(), backend->device(), backend->queue(), directoryIconImage);
     std::shared_ptr<Texture2D> playIconTexture =
-        Texture2D::create(UniqueId(), backend.device(), backend.queue(), playIconImage);
+        Texture2D::create(UniqueId(), backend->device(), backend->queue(), playIconImage);
     std::shared_ptr<Texture2D> stopIconTexture =
-        Texture2D::create(UniqueId(), backend.device(), backend.queue(), stopIconImage);
+        Texture2D::create(UniqueId(), backend->device(), backend->queue(), stopIconImage);
 
     Image emptyImage(1, 1, { 0, 0, 0, 0 });
     std::shared_ptr<Texture2D> emptyTexture =
-        Texture2D::create(UniqueId(), backend.device(), backend.queue(), emptyImage);
+        Texture2D::create(UniqueId(), backend->device(), backend->queue(), emptyImage);
 
     Editor editor(
-        engine, backend.device(), backend.queue(), scriptEngine, emptyTexture, fileIconTexture, directoryIconTexture,
-        playIconTexture, stopIconTexture
+        engine, scriptEngine, emptyTexture, fileIconTexture, directoryIconTexture, playIconTexture, stopIconTexture
     );
 
     int previousWidth = defaultWindowWidth;
     int previousHeight = defaultWindowHeight;
 
     float lastFrameTime {};
-    float currentFrameTime {};
-    float deltaTime {};
+    float currentFrameTime;
+    float deltaTime;
 
     while (window->isOpen()) {
         currentFrameTime = static_cast<float>(glfwGetTime());
@@ -95,7 +96,7 @@ int main() {
         editor.onRuntimeUpdate(deltaTime);
 
         WGPUSurfaceTexture surfaceTexture;
-        wgpuSurfaceGetCurrentTexture(backend.surface(), &surfaceTexture);
+        wgpuSurfaceGetCurrentTexture(backend->surface(), &surfaceTexture);
 
         if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
             continue;
@@ -103,7 +104,7 @@ int main() {
 
         if (currentWidth != previousWidth || currentHeight != previousHeight) {
             if (currentWidth > 0 && currentHeight > 0) {
-                backend.configureSurface(static_cast<uint32_t>(currentWidth), static_cast<uint32_t>(currentHeight));
+                backend->configureSurface(static_cast<uint32_t>(currentWidth), static_cast<uint32_t>(currentHeight));
             }
 
             previousWidth = currentWidth;
@@ -114,7 +115,7 @@ int main() {
             .nextInChain = nullptr,
             .label = "Command encoder",
         };
-        WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(backend.device(), &encoderDescriptor);
+        WGPUCommandEncoder commandEncoder = wgpuDeviceCreateCommandEncoder(backend->device(), &encoderDescriptor);
 
         {
             auto *scene = engine->currentScene();
@@ -165,8 +166,8 @@ int main() {
         };
         WGPUCommandBuffer commandBuffer = wgpuCommandEncoderFinish(commandEncoder, &commandBufferDescriptor);
 
-        wgpuQueueSubmit(backend.queue(), 1, &commandBuffer);
-        wgpuSurfacePresent(backend.surface());
+        wgpuQueueSubmit(backend->queue(), 1, &commandBuffer);
+        wgpuSurfacePresent(backend->surface());
 
         wgpuCommandBufferReference(commandBuffer);
         wgpuRenderPassEncoderRelease(renderPassEncoder);

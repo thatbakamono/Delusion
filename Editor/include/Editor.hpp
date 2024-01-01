@@ -58,7 +58,7 @@ class Editor {
               m_emptyTexture(std::move(emptyTexture)), m_fileIconTexture(std::move(fileIconTexture)),
               m_directoryIconTexture(std::move(directoryIconTexture)), m_playIconTexture(std::move(playIconTexture)),
               m_stopIconTexture(std::move(stopIconTexture)),
-              m_assetManager(std::make_shared<AssetManager>(device, queue)), m_sceneSerde(m_assetManager) {
+              m_assetManager(engine->assetManager()), m_sceneSerde(m_assetManager) {
             m_engine->setCurrentScene(m_scene);
         }
 

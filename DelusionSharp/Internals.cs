@@ -32,6 +32,17 @@ namespace DelusionSharp
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void SetTransformRotation(UniqueId id, float rotation);
         
+        // Sprite component
+        
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern bool HasSpriteComponent(UniqueId id);
+        
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern UniqueId GetSpriteTexture(UniqueId id);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void SetSpriteTexture(UniqueId entityId, UniqueId textureId);
+
         // Rigidbody component
 
         [MethodImpl(MethodImplOptions.InternalCall)]

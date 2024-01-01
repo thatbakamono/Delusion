@@ -6,6 +6,7 @@
 
 #include <glfw/glfw3.h>
 
+#include "delusion/AssetManager.hpp"
 #include "delusion/Scene.hpp"
 #include "delusion/Window.hpp"
 
@@ -15,6 +16,7 @@ static std::unique_ptr<Engine> s_engine;
 
 class Engine {
     private:
+        std::shared_ptr<AssetManager> m_assetManager;
         std::shared_ptr<Window> m_currentWindow;
         std::shared_ptr<Scene> m_currentScene;
 
@@ -36,6 +38,14 @@ class Engine {
             }
 
             return s_engine.get();
+        }
+
+        [[nodiscard]] std::shared_ptr<AssetManager> &assetManager() {
+            return m_assetManager;
+        }
+
+        void setAssetManager(std::shared_ptr<AssetManager> assetManager) {
+            m_assetManager = std::move(assetManager);
         }
 
         [[nodiscard]] Window *currentWindow() const {

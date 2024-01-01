@@ -32,6 +32,10 @@ int main() {
     backend.setup(window.get());
     backend.configureSurface(defaultWindowWidth, defaultWindowHeight);
 
+    auto assetManager = std::make_shared<AssetManager>(backend.device(), backend.queue());
+
+    engine->setAssetManager(assetManager);
+
     ImGui::CreateContext();
 
     ImGuiIO &io = ImGui::GetIO();

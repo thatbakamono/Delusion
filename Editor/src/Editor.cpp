@@ -218,6 +218,10 @@ void Editor::onViewportPanel(std::shared_ptr<Texture2D> &viewportTexture, float 
                 m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetTransformRotation", &getTransformRotation);
                 m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetTransformRotation", &setTransformRotation);
 
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::HasSpriteComponent", &hasSpriteComponent);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::GetSpriteTexture", &getSpriteTexture);
+                m_scriptEngine->setInternalCall("DelusionSharp.Internals::SetSpriteTexture", &setSpriteTexture);
+
                 m_scriptEngine->setInternalCall(
                     "DelusionSharp.Internals::HasRigidbodyComponent", &hasRigidbodyComponent
                 );

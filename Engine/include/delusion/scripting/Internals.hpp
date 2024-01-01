@@ -87,6 +87,34 @@ void setTransformRotation(UniqueId id, float rotation) {
     transform.rotation = rotation;
 }
 
+// Sprite component
+
+bool hasSpriteComponent(UniqueId id) {
+    const auto *engine = Engine::get();
+    const auto *scene = engine->currentScene();
+    const auto *entity = scene->getById(id).value();
+
+    return entity->hasComponent<SpriteComponent>();
+}
+
+UniqueId getSpriteTexture(UniqueId id) {
+    const auto *engine = Engine::get();
+    const auto *scene = engine->currentScene();
+    const auto *entity = scene->getById(id).value();
+    const auto &sprite = entity->getComponent<SpriteComponent>();
+
+    return sprite.texture->id();
+}
+
+void setSpriteTexture(UniqueId id, UniqueId textureId) {
+    auto *engine = Engine::get();
+    auto *scene = engine->currentScene();
+    auto *entity = scene->getById(id).value();
+    auto &sprite = entity->getComponent<SpriteComponent>();
+
+    sprite.texture = engine->assetManager()->getTextureById(textureId);
+}
+
 // Rigidbody component
 
 bool hasRigidbodyComponent(UniqueId id) {

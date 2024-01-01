@@ -18,6 +18,14 @@ namespace DelusionSharp
                 throw new Exception("Entity does not have transform component");
             }
 
+            if (type == typeof(Texture2D))
+            {
+                if (Internals.HasSpriteComponent(_id))
+                    return (T) (object) new Sprite(this);
+                
+                throw new Exception("Entity does not have sprite component");
+            }
+
             if (type == typeof(Rigidbody))
             {
                 if (Internals.HasRigidbodyComponent(_id))

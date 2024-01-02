@@ -13,11 +13,15 @@
 
 class ScriptEngine {
     private:
-        std::unique_ptr<MonoDomain, decltype(&mono_jit_cleanup)> m_rootDomain;
+        std::unique_ptr<MonoDomain, decltype(&mono_jit_cleanup)> m_rootDomain { nullptr, mono_jit_cleanup };
 
         MonoDomain *m_domain;
     public:
-        ScriptEngine() : m_rootDomain(std::unique_ptr<MonoDomain, decltype(&mono_jit_cleanup)>(mono_jit_init("delusion"), mono_jit_cleanup)) {
+        ScriptEngine() {
+            mono_set_assemblies_path("mono/4.5");
+
+            m_rootDomain = std::unique_ptr<MonoDomain, decltype(&mono_jit_cleanup)>(mono_jit_init("delusion"), mono_jit_cleanup);
+
             if (m_rootDomain == nullptr) {
                 throw std::exception();
             }

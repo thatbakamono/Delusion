@@ -53,6 +53,16 @@ void AssetBrowserPanel::onUpdate(const Project &project) {
                 }
             }
 
+            if (extensionText == ".mp3") {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    auto pathText = path.string();
+
+                    ImGui::SetDragDropPayload("audio", pathText.c_str(), pathText.size() + 1, ImGuiCond_Once);
+
+                    ImGui::EndDragDropSource();
+                }
+            }
+
             if (extensionText == ".scene") {
                 if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
                     auto pathText = path.string();

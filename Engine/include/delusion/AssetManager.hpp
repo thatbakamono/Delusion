@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <unordered_map>
 
+#include "delusion/audio/AudioClip.hpp"
 #include "delusion/formats/ImageDecoder.hpp"
 #include "delusion/graphics/Texture2D.hpp"
 #include "delusion/io/FileUtilities.hpp"
@@ -18,18 +19,19 @@ class AssetManager {
         std::unordered_map<std::filesystem::path, UniqueId> m_pathToIdMappings;
 
         std::unordered_map<UniqueId, std::shared_ptr<Texture2D>> m_textures;
+        std::unordered_map<UniqueId, std::shared_ptr<AudioClip>> m_audioClips;
     public:
         AssetManager(WGPUDevice device, WGPUQueue queue) : m_device(device), m_queue(queue) {}
 
         [[nodiscard]] bool isLoaded(UniqueId id) {
-            return m_textures.contains(id);
+            return m_textures.contains(id) || m_audioClips.contains(id);
         }
 
         [[nodiscard]] bool isLoaded(const std::filesystem::path &assetPath) {
             if (m_pathToIdMappings.contains(assetPath)) {
                 auto id = m_pathToIdMappings.at(assetPath);
 
-                return m_textures.contains(id);
+                return m_textures.contains(id) || m_audioClips.contains(id);
             } else {
                 return false;
             }
@@ -51,6 +53,11 @@ class AssetManager {
                     m_textures[metadata.id] = Texture2D::create(metadata.id, m_device, m_queue, image);
                     m_idToPathMappings[metadata.id] = assetPath;
                 }
+            } else if (assetPath.extension() == ".mp3") {
+                if (!m_audioClips.contains(metadata.id)) {
+                    m_audioClips[metadata.id] = AudioClip::create(metadata.id, assetPath);
+                    m_idToPathMappings[metadata.id] = assetPath;
+                }
             }
 
             return metadata.id;
@@ -65,6 +72,11 @@ class AssetManager {
 
                     m_textures[id] = Texture2D::create(id, m_device, m_queue, image);
                 }
+            } else if (assetPath.extension() == ".mp3") {
+                if (!m_audioClips.contains(id)) {
+                    m_audioClips[id] = AudioClip::create(id, assetPath);
+                    m_idToPathMappings[id] = assetPath;
+                }
             }
         }
 
@@ -75,7 +87,7 @@ class AssetManager {
 
                     auto extension = path.extension();
 
-                    if (extension == ".png") {
+                    if (extension == ".png" || extension == ".mp3") {
                         auto metadataExtension = std::format("{}.{}", path.extension().string(), "metadata");
 
                         path.replace_extension(metadataExtension);
@@ -97,7 +109,7 @@ class AssetManager {
         void generateMetadataForFile(const std::filesystem::path &filePath) {
             auto extension = filePath.extension();
 
-            if (extension == ".png") {
+            if (extension == ".png" || extension == ".mp3") {
                 auto metadataExtension = std::format("{}.{}", filePath.extension().string(), "metadata");
 
                 auto metadataPath = filePath;
@@ -146,7 +158,7 @@ class AssetManager {
 
                     auto extension = path.extension();
 
-                    if (extension == ".png") {
+                    if (extension == ".png" || extension == ".mp3") {
                         auto metadataExtension = std::format("{}.{}", path.extension().string(), "metadata");
 
                         auto metadataPath = path;
@@ -173,7 +185,7 @@ class AssetManager {
         void loadMapping(const std::filesystem::path &filePath) {
             auto extension = filePath.extension();
 
-            if (extension == ".png") {
+            if (extension == ".png" || extension == ".mp3") {
                 auto metadataExtension = std::format("{}.{}", filePath.extension().string(), "metadata");
 
                 auto metadataPath = filePath;
@@ -210,5 +222,9 @@ class AssetManager {
 
         [[nodiscard]] std::shared_ptr<Texture2D> getTextureById(UniqueId id) const {
             return m_textures.at(id);
+        }
+
+        [[nodiscard]] std::shared_ptr<AudioClip> getAudioClipById(UniqueId id) const {
+            return m_audioClips.at(id);
         }
 };

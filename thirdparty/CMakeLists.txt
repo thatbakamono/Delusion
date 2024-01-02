@@ -10,6 +10,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(box2d)
 
 add_subdirectory(entt)
+add_subdirectory(ffmpeg)
 add_subdirectory(filewatch)
 add_subdirectory(glfw)
 add_subdirectory(glfw3webgpu)
@@ -17,6 +18,15 @@ add_subdirectory(glm)
 add_subdirectory(imgui)
 add_subdirectory(mono)
 add_subdirectory(nativefiledialog-extended)
+
+FetchContent_Declare(
+    portaudio
+    GIT_REPOSITORY https://github.com/PortAudio/portaudio
+    GIT_TAG v19.7.0
+)
+
+FetchContent_MakeAvailable(portaudio)
+
 add_subdirectory(webgpu-headers)
 
 corrosion_import_crate(MANIFEST_PATH wgpu-native/Cargo.toml)

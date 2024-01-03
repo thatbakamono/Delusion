@@ -1,10 +1,14 @@
 ﻿namespace DelusionSharp
 {
-    public class Input
+    public unsafe class Input
     {
         public static bool IsKeyDown(Key key)
         {
-            return Internals.IsKeyDown(key);
+            bool result;
+            
+            Internals.IsKeyDown(key, &result);
+
+            return result;
         }
     }
 }

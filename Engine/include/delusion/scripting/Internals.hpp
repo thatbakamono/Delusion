@@ -9,32 +9,32 @@
 
 // Input
 
-bool isKeyDown(Key key) {
+void isKeyDown(Key key, bool *result) {
     const auto *engine = Engine::get();
     const auto *window = engine->currentWindow();
 
-    return glfwGetKey(window->inner(), static_cast<int>(key)) == GLFW_PRESS;
+    *result = glfwGetKey(window->inner(), static_cast<int>(key)) == GLFW_PRESS;
 }
 
 // Transform component
 
-bool hasTransformComponent(UniqueId id) {
+void hasTransformComponent(UniqueId id, bool *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
 
-    return entity->hasComponent<TransformComponent>();
+    *result = entity->hasComponent<TransformComponent>();
 }
 
-glm::vec2 getTransformPosition(UniqueId id) {
+void getTransformPosition(UniqueId id, glm::vec2 *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
     const auto &transform = entity->getComponent<TransformComponent>();
 
-    return transform.position;
+    *result = transform.position;
 }
 
 void setTransformPosition(UniqueId id, glm::vec2 position) {
@@ -47,14 +47,14 @@ void setTransformPosition(UniqueId id, glm::vec2 position) {
     transform.position = position;
 }
 
-glm::vec2 getTransformScale(UniqueId id) {
+void getTransformScale(UniqueId id, glm::vec2 *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
     const auto &transform = entity->getComponent<TransformComponent>();
 
-    return transform.scale;
+    *result = transform.scale;
 }
 
 void setTransformScale(UniqueId id, glm::vec2 scale) {
@@ -67,14 +67,14 @@ void setTransformScale(UniqueId id, glm::vec2 scale) {
     transform.scale = scale;
 }
 
-float getTransformRotation(UniqueId id) {
+void getTransformRotation(UniqueId id, float *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
     const auto &transform = entity->getComponent<TransformComponent>();
 
-    return transform.rotation;
+    *result = transform.rotation;
 }
 
 void setTransformRotation(UniqueId id, float rotation) {
@@ -89,21 +89,21 @@ void setTransformRotation(UniqueId id, float rotation) {
 
 // Sprite component
 
-bool hasSpriteComponent(UniqueId id) {
+void hasSpriteComponent(UniqueId id, bool *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     const auto *entity = scene->getById(id).value();
 
-    return entity->hasComponent<SpriteComponent>();
+    *result = entity->hasComponent<SpriteComponent>();
 }
 
-UniqueId getSpriteTexture(UniqueId id) {
+void getSpriteTexture(UniqueId id, UniqueId *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     const auto *entity = scene->getById(id).value();
     const auto &sprite = entity->getComponent<SpriteComponent>();
 
-    return sprite.texture->id();
+    *result = sprite.texture->id();
 }
 
 void setSpriteTexture(UniqueId id, UniqueId textureId) {
@@ -117,21 +117,21 @@ void setSpriteTexture(UniqueId id, UniqueId textureId) {
 
 // Rigidbody component
 
-bool hasRigidbodyComponent(UniqueId id) {
+void hasRigidbodyComponent(UniqueId id, bool *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     const auto *entity = scene->getById(id).value();
 
-    return entity->hasComponent<RigidbodyComponent>();
+    *result = entity->hasComponent<RigidbodyComponent>();
 }
 
-RigidbodyComponent::BodyType getRigidbodyBodyType(UniqueId id) {
+void getRigidbodyBodyType(UniqueId id, RigidbodyComponent::BodyType *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     const auto *entity = scene->getById(id).value();
     const auto &rigidbody = entity->getComponent<RigidbodyComponent>();
 
-    return rigidbody.bodyType;
+    *result = rigidbody.bodyType;
 }
 
 void setRigidbodyBodyType(UniqueId id, RigidbodyComponent::BodyType bodyType) {
@@ -143,13 +143,13 @@ void setRigidbodyBodyType(UniqueId id, RigidbodyComponent::BodyType bodyType) {
     rigidbody.bodyType = bodyType;
 }
 
-bool getRigidbodyHasFixedRotation(UniqueId id) {
+void getRigidbodyHasFixedRotation(UniqueId id, bool *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     const auto *entity = scene->getById(id).value();
     const auto &rigidbody = entity->getComponent<RigidbodyComponent>();
 
-    return rigidbody.hasFixedRotation;
+    *result = rigidbody.hasFixedRotation;
 }
 
 void setRigidbodyHasFixedRotation(UniqueId id, bool hasFixedRotation) {
@@ -161,14 +161,14 @@ void setRigidbodyHasFixedRotation(UniqueId id, bool hasFixedRotation) {
     rigidbody.hasFixedRotation = hasFixedRotation;
 }
 
-float getRigidbodyFriction(UniqueId id) {
+void getRigidbodyFriction(UniqueId id, float *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
     const auto &rigidbody = entity->getComponent<RigidbodyComponent>();
 
-    return rigidbody.friction;
+    *result = rigidbody.friction;
 }
 
 void setRigidbodyFriction(UniqueId id, float friction) {
@@ -181,14 +181,14 @@ void setRigidbodyFriction(UniqueId id, float friction) {
     rigidbody.friction = friction;
 }
 
-float getRigidbodyDensity(UniqueId id) {
+void getRigidbodyDensity(UniqueId id, float *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
     const auto &rigidbody = entity->getComponent<RigidbodyComponent>();
 
-    return rigidbody.density;
+    *result = rigidbody.density;
 }
 
 void setRigidbodyDensity(UniqueId id, float density) {
@@ -201,14 +201,14 @@ void setRigidbodyDensity(UniqueId id, float density) {
     rigidbody.density = density;
 }
 
-float getRigidbodyRestitution(UniqueId id) {
+void getRigidbodyRestitution(UniqueId id, float *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
     const auto &rigidbody = entity->getComponent<RigidbodyComponent>();
 
-    return rigidbody.restitution;
+    *result = rigidbody.restitution;
 }
 
 void setRigidbodyRestitution(UniqueId id, float restitution) {
@@ -221,14 +221,14 @@ void setRigidbodyRestitution(UniqueId id, float restitution) {
     rigidbody.restitution = restitution;
 }
 
-float getRigidbodyRestitutionThreshold(UniqueId id) {
+void getRigidbodyRestitutionThreshold(UniqueId id, float *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
     const auto &rigidbody = entity->getComponent<RigidbodyComponent>();
 
-    return rigidbody.restitutionThreshold;
+    *result = rigidbody.restitutionThreshold;
 }
 
 void setRigidbodyRestitutionThreshold(UniqueId id, float restitutionThreshold) {
@@ -243,22 +243,22 @@ void setRigidbodyRestitutionThreshold(UniqueId id, float restitutionThreshold) {
 
 // Box collider component
 
-bool hasBoxColliderComponent(UniqueId id) {
+void hasBoxColliderComponent(UniqueId id, bool *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     const auto *entity = scene->getById(id).value();
 
-    return entity->hasComponent<BoxColliderComponent>();
+    *result = entity->hasComponent<BoxColliderComponent>();
 }
 
-glm::vec2 getBoxColliderSize(UniqueId id) {
+void getBoxColliderSize(UniqueId id, glm::vec2 *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
     const auto &boxCollider = entity->getComponent<BoxColliderComponent>();
 
-    return boxCollider.size;
+    *result = boxCollider.size;
 }
 
 void setBoxColliderSize(UniqueId id, glm::vec2 size) {
@@ -271,14 +271,14 @@ void setBoxColliderSize(UniqueId id, glm::vec2 size) {
     boxCollider.size = size;
 }
 
-glm::vec2 getBoxColliderOffset(UniqueId id) {
+void getBoxColliderOffset(UniqueId id, glm::vec2 *result) {
     const auto *engine = Engine::get();
     const auto *scene = engine->currentScene();
     // NOTE: This shouldn't fail unless there's somewhere a really serious bug
     const auto *entity = scene->getById(id).value();
     const auto &boxCollider = entity->getComponent<BoxColliderComponent>();
 
-    return boxCollider.offset;
+    *result = boxCollider.offset;
 }
 
 void setBoxColliderOffset(UniqueId id, glm::vec2 offset) {

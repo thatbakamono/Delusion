@@ -1,12 +1,19 @@
 ﻿namespace DelusionSharp
 {
-    public class Sprite
+    public unsafe class Sprite
     {
         private Entity _entity;
         
         public Texture2D Texture
         {
-            get => new Texture2D(Internals.GetSpriteTexture(_entity._id));
+            get
+            {
+                UniqueId result;
+                
+                Internals.GetSpriteTexture(_entity._id, &result);
+
+                return new Texture2D(result);
+            }
             set => Internals.SetSpriteTexture(_entity._id, value._id);
         }
 

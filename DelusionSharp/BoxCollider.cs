@@ -1,18 +1,32 @@
 ﻿namespace DelusionSharp
 {
-    public class BoxCollider
+    public unsafe class BoxCollider
     {
         private Entity _entity;
 
         public Vector2 Size
         {
-            get => Internals.GetBoxColliderSize(_entity._id);
+            get
+            {
+                Vector2 result;
+                
+                Internals.GetBoxColliderSize(_entity._id, &result);
+
+                return result;
+            }
             set => Internals.SetBoxColliderSize(_entity._id, value);
         }
 
         public Vector2 Offset
         {
-            get => Internals.GetBoxColliderOffset(_entity._id);
+            get
+            {
+                Vector2 result;
+                
+                Internals.GetBoxColliderOffset(_entity._id, &result);
+
+                return result;
+            }
             set => Internals.SetBoxColliderOffset(_entity._id, value);
         }
         

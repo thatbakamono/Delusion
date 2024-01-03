@@ -29,7 +29,7 @@ class Entity {
         Entity(Entity &&other) noexcept {
             m_registry = std::exchange(other.m_registry, nullptr);
             m_entityId = std::exchange(other.m_entityId, entt::null);
-            m_id = other.m_id;
+            m_id = std::exchange(other.m_id, UniqueId(0));
             m_children = std::move(other.m_children);
         }
 
@@ -49,7 +49,7 @@ class Entity {
 
             m_registry = std::exchange(other.m_registry, nullptr);
             m_entityId = std::exchange(other.m_entityId, entt::null);
-            m_id = other.m_id;
+            m_id = std::exchange(other.m_id, UniqueId(0));
             m_children = std::move(other.m_children);
 
             return *this;

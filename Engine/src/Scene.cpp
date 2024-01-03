@@ -116,20 +116,34 @@ void Scene::onUpdate(float deltaTime) {
     constexpr int32_t velocityIterations = 8;
     constexpr int32_t positionIterations = 3;
 
-    m_physicsWorld->Step(deltaTime, velocityIterations, positionIterations);
-
     auto view = m_registry.view<TransformComponent, RigidbodyComponent>();
 
     for (auto entity : view) {
         auto [transform, rigidbody] = view.get<TransformComponent, RigidbodyComponent>(entity);
 
-        b2Body *body = static_cast<b2Body *>(rigidbody.body);
+        auto *body = static_cast<b2Body *>(rigidbody.body);
 
         const auto &position = body->GetPosition();
+        const auto angle = body->GetAngle();
+
+        if (transform.position.x != position.x || transform.position.y != position.y || transform.rotation != angle) {
+            body->SetTransform({ transform.position.x, transform.position.y }, transform.rotation);
+        }
+    }
+
+    m_physicsWorld->Step(deltaTime, velocityIterations, positionIterations);
+
+    for (auto entity : view) {
+        auto [transform, rigidbody] = view.get<TransformComponent, RigidbodyComponent>(entity);
+
+        auto *body = static_cast<b2Body *>(rigidbody.body);
+
+        const auto &position = body->GetPosition();
+        const auto angle = body->GetAngle();
 
         transform.position.x = position.x;
         transform.position.y = position.y;
-        transform.rotation = body->GetAngle();
+        transform.rotation = angle;
     }
 }
 

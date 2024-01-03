@@ -1,5 +1,5 @@
-set(BOX2D_BUILD_UNIT_TEST OFF)
-set(BOX2D_BUILD_TESTBED OFF)
+option(BOX2D_BUILD_UNIT_TESTS "Build the Box2D unit tests" OFF)
+option(BOX2D_BUILD_TESTBED "Build the Box2D testbed" OFF)
 
 FetchContent_Declare(
     box2d
